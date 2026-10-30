@@ -12,6 +12,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=9.2.0",
+    "sdrf-pipelines[ontology]>=0.1.6",
 ]
 
 

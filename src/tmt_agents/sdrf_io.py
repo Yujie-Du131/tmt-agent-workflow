@@ -18,11 +18,13 @@ import pandas as pd
 RUN_PARAMS_OWN_DESIGN = {
     "organism": "homo sapiens",
     "cell_line": "RL",
+    "cellosaurus_accession": "CVCL_1660",
     "disease": "diffuse large B-cell lymphoma",
     "data_file": "EZH2_IgG_CPI169_TMTpro16.raw",  # placeholder file name
     "fraction": "1",  # assumption: single-shot, no fractionation
     "instrument": "NT=Orbitrap Exploris 480;AC=MS:1003028",  # assumption
     "dissociation": "NT=HCD;AC=PRIDE:0000590",  # assumption
+    "acquisition": "NT=Data-Dependent Acquisition;AC=PRIDE:0000627",  # assumption
     "enzyme": "NT=Trypsin;AC=MS:1001251",  # stated in thesis (on-bead digestion)
     "modifications": [  # assumption: standard TMTpro settings
         "NT=TMTpro;AC=UNIMOD:2016;TA=K;MT=Fixed",
@@ -64,6 +66,8 @@ def build_sdrf(sheet: pd.DataFrame, params: dict) -> pd.DataFrame:
             ("characteristics[organism]", params["organism"]),
             ("characteristics[organism part]", "not applicable"),
             ("characteristics[cell line]", params["cell_line"]),
+            ("characteristics[cellosaurus accession]", params["cellosaurus_accession"]),
+            ("characteristics[cellosaurus name]", params["cell_line"]),
             ("characteristics[disease]", params["disease"]),
             ("characteristics[biological replicate]", s.biological_replicate),
             ("characteristics[compound]", s.treatment),
@@ -75,6 +79,7 @@ def build_sdrf(sheet: pd.DataFrame, params: dict) -> pd.DataFrame:
             ("comment[technical replicate]", "1"),
             ("comment[label]", s.channel),
             ("comment[instrument]", params["instrument"]),
+            ("comment[proteomics data acquisition method]", params["acquisition"]),
             ("comment[dissociation method]", params["dissociation"]),
             ("comment[cleavage agent details]", params["enzyme"]),
         ]
