@@ -1,5 +1,5 @@
 {
-  "description": "EZH2 vs IgG bait x CPI-169 vs DMSO, three independently treated cultures per treatment; each culture split into one EZH2 and one IgG sample; single TMTpro 16-plex run.",
+  "description": "EZH2 vs IgG antibody x CPI-169 vs DMSO; three independently treated cultures per treatment; two cell aliquots per culture, one labelled with EZH2 and one with IgG; single TMTpro 16-plex run.",
   "plex": "TMTpro16",
   "factors": {
     "compound": ["DMSO", "CPI-169"],
