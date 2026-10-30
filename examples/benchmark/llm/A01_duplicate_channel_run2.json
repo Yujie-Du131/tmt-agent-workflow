@@ -1,0 +1,30 @@
+{
+  "findings": [
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [
+        1,
+        2
+      ],
+      "evidence": "Rule: \"Channel TMT126 ... is assigned to 2 samples\". Row 1 (R1_DMSO_EZH2) and row 2 (R1_DMSO_IgG) both have comment[label] = TMT126. The description says 12 samples were labelled with one TMTpro 16-plex kit.",
+      "explanation": "Two samples cannot share one TMT channel in a single run. Their reporter-ion intensities cannot be separated, so the R1 DMSO EZH2 and R1 DMSO IgG samples cannot be quantified independently. This breaks the EZH2-vs-IgG pairing for culture 1 and the antibody-by-treatment interaction. The labels run TMT126, TMT126, TMT127C, ..., so TMT127N was skipped. The most likely cause is a copy/paste error in row 2, which should be TMT127N.",
+      "suggested_fix": "Check the real labelling scheme. If the order was sequential, set row 2 (R1_DMSO_IgG) to TMT127N and keep TMT126 for row 1."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule: \"5 channel(s) not assigned to a sample: TMT127N, TMT132C, TMT133N, TMT133C, TMT134N\". The description says \"Four channels are unused.\"",
+      "explanation": "A 16-plex kit with 12 samples should leave 4 channels empty, but the check reports 5. The extra one is TMT127N, which looks unassigned only because of the TMT126 duplicate in row 2. Once the duplicate is fixed, the unused channels should be TMT132C, TMT133N, TMT133C and TMT134N, matching the description. If TMT127N really was empty, the labelling or the sample count is inconsistent with the description.",
+      "suggested_fix": "Assign TMT127N to row 2 (R1_DMSO_IgG) and confirm that TMT132C, TMT133N, TMT133C and TMT134N were the four empty channels."
+    }
+  ],
+  "summary": "The SDRF matches the description on organism, cell line, treatment, antibody, enzyme, TMTpro labelling and the 12-sample design. The one real problem is a duplicated TMT126 channel in rows 1 and 2. It most likely should be TMT127N for row 2, which would also fix the extra unused channel the check reports (5 instead of the 4 the description gives)."
+}

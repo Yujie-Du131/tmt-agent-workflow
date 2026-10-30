@@ -1,0 +1,34 @@
+{
+  "findings": [
+    {
+      "category": "naming_inconsistency",
+      "severity": "error",
+      "columns": [
+        "source name",
+        "characteristics[compound]",
+        "factor value[compound]"
+      ],
+      "rows": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "evidence": "Source names 'R1_DMSO_EZH2' and 'R1_DMSO_IgG' have compound 'CPI-169', while 'R1_CPI_EZH2' and 'R1_CPI_IgG' have compound 'DMSO'. In replicates 2 and 3 the names and compound agree (e.g. 'R2_DMSO_EZH2' is DMSO, 'R2_CPI_EZH2' is CPI-169).",
+      "explanation": "For replicate 1 the treatment in the sample name contradicts the compound column and the factor value. Either the names or the compound values are swapped. If the compound values are wrong, the antibody-by-treatment interaction contrast is corrupted for one of the three cultures. The description does not say which culture got which treatment, so the correct version cannot be determined from it.",
+      "suggested_fix": "Check the lab records for culture 1. Then either rename the rows to R1_CPI_* and R1_DMSO_*, or swap the compound and factor value[compound] values for rows 1-4 so that they match the names."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule check: '4 channel(s) not assigned to a sample: TMT132C, TMT133N, TMT133C, TMT134N'. The description says 'Four channels are unused' and the SDRF has 12 rows labelled TMT126 to TMT132N.",
+      "explanation": "The 12 samples use 12 of the 16 TMTpro channels, so the 4 empty channels are expected and match the description. They should not affect quantification. Empty channels can still receive some isotopic impurity or co-isolation signal. The analysis software should be told that these channels are empty rather than treat them as samples.",
+      "suggested_fix": "No change needed to the SDRF. Optionally note in the project documentation that TMT132C, TMT133N, TMT133C and TMT134N were intentionally left empty."
+    }
+  ],
+  "summary": "Replicate 1 (rows 1-4) has sample names whose treatment contradicts the compound column and factor value. The four unused TMTpro channels are consistent with the description. Nothing else contradicts the description."
+}

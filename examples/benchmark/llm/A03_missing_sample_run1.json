@@ -1,0 +1,55 @@
+{
+  "findings": [
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "characteristics[compound]",
+        "characteristics[antibody]",
+        "source name"
+      ],
+      "rows": [],
+      "evidence": "Rule: 'Condition (compound=CPI-169, antibody=IgG) has 2 samples; expected 3'. SDRF has only R1_CPI_IgG and R2_CPI_IgG for this condition.",
+      "explanation": "The CPI-169/IgG group has 2 replicates instead of 3, so the design is unbalanced. The antibody-by-treatment interaction needs the IgG control under drug to estimate how CPI-169 changes background labelling, and with n=2 that estimate has less power and a less reliable variance. The likely cause is that the R3_CPI_IgG sample was left out of the SDRF, perhaps because it was dropped or not entered. It could also have been lost in the experiment.",
+      "suggested_fix": "Add the missing R3_CPI_IgG row (CPI-169, IgG, biological replicate 3) with its TMT channel, for example TMT132N. If the sample was really lost or excluded, record that, and plan the analysis for an unbalanced design."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "characteristics[biological replicate]",
+        "characteristics[compound]",
+        "characteristics[antibody]"
+      ],
+      "rows": [
+        11
+      ],
+      "evidence": "Rule: 'Culture (compound=CPI-169, biological replicate=3) has antibody = [EZH2]; expected [EZH2, IgG]'. Row 11 is R3_CPI_EZH2 and has no IgG partner. The description says 'The EZH2 and IgG samples from the same culture are paired'.",
+      "explanation": "The third CPI-169 culture has an EZH2 sample but no paired IgG control. A paired or blocked model by culture cannot use this culture for the interaction contrast, so the EZH2 sample either drops out of the paired analysis or is analysed unpaired. This is the same missing sample that causes the imbalance, most likely an omitted R3_CPI_IgG row.",
+      "suggested_fix": "Add the R3_CPI_IgG row with biological replicate 3 and compound CPI-169. If that IgG sample does not exist, state this and decide whether R3_CPI_EZH2 should be excluded from the paired comparison."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule: '5 channel(s) not assigned to a sample: TMT132N, TMT132C, TMT133N, TMT133C, TMT134N'. The description says 'Four channels are unused.'",
+      "explanation": "With a 16-plex kit and 12 intended samples, 4 empty channels are expected. Five are empty because one sample is missing from the SDRF. Empty channels are harmless if truly unused, but here one of them probably belongs to the missing R3_CPI_IgG sample, so it should not be treated as empty.",
+      "suggested_fix": "Assign the missing sample to one of the unused channels, which would leave four empty channels. Otherwise confirm that all five channels were really empty."
+    },
+    {
+      "category": "metadata_mismatch",
+      "severity": "error",
+      "columns": [
+        "source name"
+      ],
+      "rows": [],
+      "evidence": "Description: 'This gives 12 samples: 2 antibodies x 2 treatments x 3 cultures per treatment' and 'the 12 samples were labelled'. SDRF lists only 11 sample rows (no R3_CPI_IgG).",
+      "explanation": "The number of samples in the SDRF (11) contradicts the 12 samples stated in the description. The CPI-169 IgG sample from culture 3 is missing.",
+      "suggested_fix": "Add the missing R3_CPI_IgG row so the SDRF has all 12 samples, or correct the description if only 11 samples were actually run."
+    }
+  ],
+  "summary": "The SDRF is consistent with the description for organism, cell line, enzyme, compounds and antibodies, but it lists 11 samples instead of the 12 described. The R3_CPI_IgG sample is missing. This causes the balance and pairing errors and the fifth unused channel."
+}

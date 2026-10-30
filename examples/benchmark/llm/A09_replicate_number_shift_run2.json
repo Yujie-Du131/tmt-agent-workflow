@@ -1,0 +1,62 @@
+{
+  "findings": [
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "characteristics[biological replicate]",
+        "characteristics[antibody]",
+        "characteristics[compound]"
+      ],
+      "rows": [
+        7
+      ],
+      "evidence": "Rule: culture (CPI-169, replicate 2) has antibody ['EZH2'], expected ['EZH2','IgG']. Row 7 source name 'R2_CPI_EZH2' has replicate 2, but the matching IgG sample 'R2_CPI_IgG' (row 8) is labelled replicate 3.",
+      "explanation": "The CPI-169 culture 2 EZH2 sample has no IgG partner in the SDRF. A paired model for the antibody-by-treatment interaction (EZH2 vs IgG within each culture) cannot be fitted for this culture, so the interaction estimate for CPI-169 would be biased or lose a replicate. The likely cause is that the IgG sample from culture 2 was assigned the wrong replicate number.",
+      "suggested_fix": "Set characteristics[biological replicate] for row 8 (R2_CPI_IgG) to 2, assuming the source name is correct."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "characteristics[biological replicate]",
+        "characteristics[antibody]",
+        "characteristics[compound]"
+      ],
+      "rows": [
+        8,
+        11,
+        12
+      ],
+      "evidence": "Rule: culture (CPI-169, replicate 3) has antibody ['EZH2','IgG','IgG'], expected ['EZH2','IgG']. Row 8 'R2_CPI_IgG' has replicate 3, as do rows 11 'R3_CPI_EZH2' and 12 'R3_CPI_IgG'.",
+      "explanation": "Culture 3 under CPI-169 appears to contain two IgG samples, which cannot happen when each culture gives one EZH2 and one IgG aliquot. The extra IgG is the culture 2 IgG sample carrying the wrong replicate number. Left uncorrected, the pairing structure is wrong, and one culture would look as if it had duplicate IgG controls.",
+      "suggested_fix": "Correct the replicate number of row 8 from 3 to 2. Then culture 3 will have only rows 11 and 12 (one EZH2, one IgG)."
+    },
+    {
+      "category": "naming_inconsistency",
+      "severity": "error",
+      "columns": [
+        "source name",
+        "characteristics[biological replicate]"
+      ],
+      "rows": [
+        8
+      ],
+      "evidence": "source name 'R2_CPI_IgG' indicates replicate 2, but characteristics[biological replicate] = 3.",
+      "explanation": "The sample name and the replicate annotation disagree for this row. Every other row's source name prefix (R1, R2, R3) matches its replicate number. This is a probable annotation typo that causes the pairing errors.",
+      "suggested_fix": "Set characteristics[biological replicate] to 2 for row 8, or fix the source name if the sample is actually from culture 3. The design description implies it is culture 2."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule: 4 channels not assigned to a sample: TMT132C, TMT133N, TMT133C, TMT134N. The description states 'Four channels are unused.'",
+      "explanation": "A TMTpro 16-plex kit has 16 channels, and 12 samples are used, leaving 4 empty. This matches the description. The empty channels cause no analysis problem, provided they were really left empty and not used for pooled or reference samples.",
+      "suggested_fix": "No change needed if these channels were truly unused. Optionally, note this in the SDRF or the submission documentation."
+    }
+  ],
+  "summary": "The design description (12 samples, RL cells, CPI-169 vs DMSO, EZH2 vs IgG, TMTpro 16-plex, trypsin) matches the SDRF values. One annotation error remains: row 8 (R2_CPI_IgG) has biological replicate 3 instead of 2. This causes the two pairing errors, since culture 2 has no IgG and culture 3 has two. The four unused channels match the description."
+}

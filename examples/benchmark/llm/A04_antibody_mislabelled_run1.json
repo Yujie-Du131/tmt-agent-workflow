@@ -1,0 +1,73 @@
+{
+  "findings": [
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "characteristics[antibody]",
+        "factor value[antibody]",
+        "characteristics[compound]"
+      ],
+      "rows": [],
+      "evidence": "Rule: 'Condition (compound=DMSO, antibody=EZH2) has 4 samples; expected 3'. The description states 2 antibodies x 2 treatments x 3 cultures, so 3 per condition.",
+      "explanation": "The DMSO/EZH2 group has an extra sample, so the design is unbalanced. The extra sample inflates the DMSO/EZH2 group and distorts the antibody-by-treatment interaction estimate. The likely cause is that one DMSO IgG sample was labelled as EZH2 (see row 2).",
+      "suggested_fix": "Correct the antibody annotation of the mislabelled sample (row 2) so that DMSO/EZH2 has 3 samples."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "characteristics[antibody]",
+        "factor value[antibody]",
+        "characteristics[compound]"
+      ],
+      "rows": [],
+      "evidence": "Rule: 'Condition (compound=DMSO, antibody=IgG) has 2 samples; expected 3'. The description states 3 IgG controls per treatment.",
+      "explanation": "The DMSO/IgG control group is missing one sample, which reduces power for estimating the IgG background in vehicle-treated cells. This weakens the EZH2-vs-IgG contrast and the interaction. It most likely results from the same annotation error as the DMSO/EZH2 excess (row 2).",
+      "suggested_fix": "Set the antibody for R1_DMSO_IgG to IgG so that the DMSO/IgG group has 3 samples."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "characteristics[antibody]",
+        "factor value[antibody]",
+        "characteristics[biological replicate]"
+      ],
+      "rows": [
+        1,
+        2
+      ],
+      "evidence": "Rule: 'Culture (compound=DMSO, biological replicate=1) has antibody = [EZH2, EZH2]; expected [EZH2, IgG]'. The description says the EZH2 and IgG samples from the same culture are paired.",
+      "explanation": "Culture 1 under DMSO has two EZH2 samples and no IgG partner. The pairing of EZH2 with IgG within a culture is broken, so a paired or blocked model cannot be fitted for this culture. The likely cause is an annotation error in row 2, whose source name says IgG.",
+      "suggested_fix": "Change characteristics[antibody] and factor value[antibody] for row 2 from EZH2 to IgG, after confirming with the lab records which channel held the IgG sample."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule: '4 channel(s) not assigned to a sample: TMT132C, TMT133N, TMT133C, TMT134N'. The description says 'Four channels are unused.'",
+      "explanation": "The unused channels agree with the description: 12 samples in a 16-plex kit leave 4 channels empty. They have no effect on the analysis provided they were truly left empty and are not hidden samples.",
+      "suggested_fix": "No change needed if these channels were empty. Optionally note in the SDRF or the submission that they are unused."
+    },
+    {
+      "category": "naming_inconsistency",
+      "severity": "error",
+      "columns": [
+        "source name",
+        "characteristics[antibody]",
+        "factor value[antibody]"
+      ],
+      "rows": [
+        2
+      ],
+      "evidence": "source name 'R1_DMSO_IgG' but characteristics[antibody] = 'EZH2' and factor value[antibody] = 'EZH2'. The description says that one aliquot per culture was labelled with the IgG isotype control.",
+      "explanation": "The sample name says IgG, while the antibody columns say EZH2. This is the likely origin of the balance and pairing errors. It would put an IgG control into the EZH2 group and bias the EZH2-vs-IgG contrast.",
+      "suggested_fix": "Set characteristics[antibody] and factor value[antibody] to IgG for row 2, assuming the source name is correct."
+    }
+  ],
+  "summary": "The SDRF has one real annotation error: row 2 (R1_DMSO_IgG, TMT127N) is annotated as EZH2 instead of IgG. This causes the DMSO/EZH2 (4 vs 3) and DMSO/IgG (2 vs 3) imbalance and breaks the EZH2/IgG pairing in culture 1. The four unused channels are consistent with the description."
+}

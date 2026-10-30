@@ -1,0 +1,27 @@
+{
+  "findings": [
+    {
+      "category": "metadata_mismatch",
+      "severity": "error",
+      "columns": [
+        "comment[cleavage agent details]"
+      ],
+      "rows": [],
+      "evidence": "Description: \"digested on-bead with trypsin\"; SDRF comment[cleavage agent details]: \"NT=Lys-C;AC=MS:1001309\" in every row.",
+      "explanation": "The SDRF names Lys-C as the cleavage agent, but the description says the digestion used trypsin. A search run with the wrong enzyme specificity would give wrong peptide identifications and missed cleavages.",
+      "suggested_fix": "Change comment[cleavage agent details] to trypsin (NT=Trypsin;AC=MS:1001251). If Lys-C was also used, correct the description instead."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule check: \"4 channel(s) not assigned to a sample: TMT132C, TMT133N, TMT133C, TMT134N\"; the description says \"Four channels are unused.\"",
+      "explanation": "Twelve samples in a 16-plex TMTpro kit leave four channels empty, which matches the description. Empty channels cost no data, but they can pick up some signal from isotopic impurities and channel leakage. The likely cause is simply that only 12 samples were run.",
+      "suggested_fix": "No change to the SDRF is needed. Confirm that the four channels were left empty and exclude them from quantification."
+    }
+  ],
+  "summary": "The enzyme in the SDRF (Lys-C) contradicts the description (trypsin). The four unused TMTpro channels match the design and are flagged only as a warning. The other values (RL cell line, human, 12 samples, antibody and treatment labels) agree with the description."
+}

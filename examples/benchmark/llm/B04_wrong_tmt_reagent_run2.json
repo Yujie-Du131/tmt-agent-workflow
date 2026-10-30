@@ -1,0 +1,27 @@
+{
+  "findings": [
+    {
+      "category": "metadata_mismatch",
+      "severity": "error",
+      "columns": [
+        "comment[modification parameters]"
+      ],
+      "rows": [],
+      "evidence": "Description: \"the 12 samples were labelled with one TMTpro 16-plex kit\". SDRF: comment[modification parameters] = \"NT=TMT6plex;AC=UNIMOD:737;TA=K;MT=Fixed\" and \"NT=TMT6plex;AC=UNIMOD:737;PP=Any N-term;MT=Fixed\" (same value in every row).",
+      "explanation": "The fixed labelling modifications are listed as TMT6plex, but the experiment used TMTpro 16-plex. The label columns (TMT126 to TMT132N) are TMTpro channels, so the modification entries conflict with them. A search with TMT6plex masses (about 229.163 Da) instead of TMTpro (about 304.207 Da) would give wrong peptide masses, poor identification and wrong reporter quantification.",
+      "suggested_fix": "Replace both TMT6plex modification entries with TMTpro (NT=TMTpro;AC=UNIMOD:2016) on K and on Any N-term, as fixed modifications."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule check: \"4 channel(s) not assigned to a sample: TMT132C, TMT133N, TMT133C, TMT134N\". Description: \"Four channels are unused.\"",
+      "explanation": "12 samples occupy 12 of the 16 TMTpro channels, and the four unused channels are the last four. This matches the description, so the omission is intentional and not a missing-sample error. The empty channels carry no samples and should be excluded from normalization and quantification, though they may contain some noise or isotopic carry-over signal.",
+      "suggested_fix": "No change to the SDRF is needed. Optionally note in the study documentation that TMT132C, TMT133N, TMT133C and TMT134N were intentionally left empty."
+    }
+  ],
+  "summary": "One real mismatch: the SDRF lists TMT6plex modifications while the description states a TMTpro 16-plex kit. The four unused channels agree with the description and are intentional. The other columns checked are consistent with the description (cell line, organism, trypsin, treatments, antibodies and 12 samples)."
+}

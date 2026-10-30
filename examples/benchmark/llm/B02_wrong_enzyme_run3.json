@@ -1,0 +1,27 @@
+{
+  "findings": [
+    {
+      "category": "metadata_mismatch",
+      "severity": "error",
+      "columns": [
+        "comment[cleavage agent details]"
+      ],
+      "rows": [],
+      "evidence": "Description: \"digested on-bead with trypsin\"; SDRF comment[cleavage agent details]: \"NT=Lys-C;AC=MS:1001309\" in every row.",
+      "explanation": "The SDRF names Lys-C as the cleavage agent, but the description says the samples were digested with trypsin. A wrong enzyme in the metadata would make the database search use the wrong cleavage specificity, which would affect peptide identification and quantification.",
+      "suggested_fix": "If trypsin alone was used, change the value to NT=Trypsin;AC=MS:1001251. If Lys-C was also used, correct the description and list both enzymes."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule check: \"4 channel(s) not assigned to a sample: TMT132C, TMT133N, TMT133C, TMT134N\". Description: \"12 samples ... one TMTpro 16-plex kit ... Four channels are unused.\"",
+      "explanation": "The 12 samples occupy TMT126 to TMT132N, so the last four channels of the 16-plex are empty. This matches the description, so it is probably intentional and expected. Empty channels do not harm the analysis, though they may contain only noise or isotopic carry-over. They should not be quantified as samples.",
+      "suggested_fix": "No change to the SDRF is needed. Optionally note in the description or SDRF that TMT132C, TMT133N, TMT133C and TMT134N were intentionally left empty."
+    }
+  ],
+  "summary": "One metadata mismatch: the SDRF lists Lys-C as the cleavage agent but the description says trypsin. The four unused TMTpro channels match the description (12 samples in a 16-plex), so that rule warning is explained as expected. The other columns the description covers (cell line, organism, treatment, antibody, sample number) agree with the SDRF."
+}

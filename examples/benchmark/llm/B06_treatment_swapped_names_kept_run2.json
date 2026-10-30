@@ -1,0 +1,34 @@
+{
+  "findings": [
+    {
+      "category": "naming_inconsistency",
+      "severity": "error",
+      "columns": [
+        "source name",
+        "characteristics[compound]",
+        "factor value[compound]"
+      ],
+      "rows": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "evidence": "Row 1 source name 'R1_DMSO_EZH2' has compound 'CPI-169'; row 2 'R1_DMSO_IgG' has 'CPI-169'; row 3 'R1_CPI_EZH2' has 'DMSO'; row 4 'R1_CPI_IgG' has 'DMSO'. In rows 5-12 the source-name treatment matches the compound value.",
+      "explanation": "For culture 1 the treatment in the source name is the opposite of the compound annotation. The treatment labels were probably swapped in one place. If the compound columns are wrong, the antibody-by-treatment interaction contrast will be inverted for replicate 1 and will add noise. If the source names are wrong, sample tracking is confusing. The description gives no culture-level treatment assignment, so it cannot show which is correct.",
+      "suggested_fix": "Check the lab records for which culture 1 received CPI-169. Then make source name, characteristics[compound] and factor value[compound] agree for rows 1-4. Either swap the compound values in rows 1-4 or rename the sources to R1_CPI_* for rows 1-2 and R1_DMSO_* for rows 3-4."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule check: '4 channel(s) not assigned to a sample: TMT132C, TMT133N, TMT133C, TMT134N'. The description says 'one TMTpro 16-plex kit' with '12 samples' and 'Four channels are unused.'",
+      "explanation": "The 12 samples occupy TMT126 to TMT132N, so the four unused channels are the last four of the 16-plex kit. This matches the description (16 - 12 = 4). It is an expected, benign design feature and not an error. The only analysis consequence is that these channels should be treated as empty and not quantified as samples. The only risk is some signal leaking into them from isotopic impurities.",
+      "suggested_fix": "No change needed. Optionally note in the SDRF or the submission that TMT132C, TMT133N, TMT133C and TMT134N were intentionally left empty."
+    }
+  ],
+  "summary": "The design matches the description in organism, cell line, enzyme, kit, antibody and sample count (12 samples, 6 CPI-169 and 6 DMSO). However, in culture 1 (rows 1-4) the treatment in the source names contradicts the compound annotation, and this needs to be resolved. The four unused channels are expected and consistent with the description."
+}

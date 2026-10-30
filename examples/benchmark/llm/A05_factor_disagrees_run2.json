@@ -1,0 +1,86 @@
+{
+  "findings": [
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "factor value[compound]",
+        "characteristics[compound]"
+      ],
+      "rows": [
+        3
+      ],
+      "evidence": "Row 3 (R1_CPI_EZH2): characteristics[compound] = CPI-169 but factor value[compound] = DMSO. The description says three cultures got CPI-169 and three got DMSO.",
+      "explanation": "The factor value used for modelling puts this CPI-169 EZH2 sample in the DMSO group. The antibody-by-treatment interaction would then be estimated from wrongly assigned samples, which biases the main comparison. The likely cause is a copy-paste error in the factor column, since the source name and characteristics both say CPI.",
+      "suggested_fix": "Set factor value[compound] to CPI-169 for row 3 so it matches characteristics[compound] and the source name."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "factor value[compound]",
+        "factor value[antibody]"
+      ],
+      "rows": [],
+      "evidence": "Rule result: Condition (compound=DMSO, antibody=EZH2) has 4 samples; expected 3. The description gives 3 cultures per treatment.",
+      "explanation": "The DMSO/EZH2 group has an extra sample, so the design is unbalanced. The extra sample is row 3, whose factor value was wrongly set to DMSO. Contrasts and variance estimates for this condition would be distorted.",
+      "suggested_fix": "Correct factor value[compound] in row 3 to CPI-169. DMSO/EZH2 will then have 3 samples (rows 1, 5, 9)."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "factor value[compound]",
+        "factor value[antibody]"
+      ],
+      "rows": [],
+      "evidence": "Rule result: Condition (compound=CPI-169, antibody=EZH2) has 2 samples; expected 3. The description says there are 3 CPI-169 EZH2 samples.",
+      "explanation": "The CPI-169/EZH2 group is missing a sample, which reduces power and unbalances the interaction contrast. This is the same problem as the DMSO/EZH2 surplus: row 3 is assigned to the wrong group.",
+      "suggested_fix": "Correct row 3's factor value[compound] to CPI-169, which restores 3 samples (rows 3, 7, 11)."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "characteristics[biological replicate]",
+        "factor value[compound]",
+        "characteristics[antibody]"
+      ],
+      "rows": [
+        4
+      ],
+      "evidence": "Rule result: Culture (compound=CPI-169, biological replicate=1) has antibody = ['IgG']; expected ['EZH2','IgG']. The description says EZH2 and IgG samples from the same culture are paired.",
+      "explanation": "Row 4 (R1_CPI_IgG) has no EZH2 partner in its culture, so the pairing of CPI-169 replicate 1 is broken. A paired or blocked model would lose this pair. The cause is that its EZH2 partner (row 3) carries the wrong factor value.",
+      "suggested_fix": "Fix factor value[compound] in row 3 to CPI-169 so rows 3 and 4 form a complete pair."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "characteristics[biological replicate]",
+        "factor value[compound]",
+        "characteristics[antibody]"
+      ],
+      "rows": [
+        1,
+        2,
+        3
+      ],
+      "evidence": "Rule result: Culture (compound=DMSO, biological replicate=1) has antibody = ['EZH2','EZH2','IgG']; expected ['EZH2','IgG']. The description says each culture gives one EZH2 and one IgG aliquot.",
+      "explanation": "The DMSO replicate-1 culture appears to have two EZH2 samples, because row 3 is grouped with it through the incorrect DMSO factor value. A paired model would treat this as a duplicated or confounded culture. The likely cause is the same factor-value error in row 3.",
+      "suggested_fix": "Set factor value[compound] in row 3 to CPI-169. DMSO replicate 1 will then contain only rows 1 and 2."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule result: 4 channels not assigned (TMT132C, TMT133N, TMT133C, TMT134N). The description says 'Four channels are unused'.",
+      "explanation": "The 12 samples occupy 12 of the 16 TMTpro channels, and the 4 empty channels match the description. They do not affect the analysis, but they should be confirmed as empty and not mislabelled samples.",
+      "suggested_fix": "No change needed if these channels were intentionally empty. Optionally note this in the SDRF or the submission."
+    }
+  ],
+  "summary": "The main problem is row 3 (R1_CPI_EZH2), where factor value[compound] is DMSO but characteristics[compound] is CPI-169. This single error causes the factor/characteristic mismatch, the unbalanced EZH2 groups and the broken pairings. The four unused channels agree with the description. No other mismatches with the description were found."
+}

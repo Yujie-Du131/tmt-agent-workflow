@@ -1,0 +1,86 @@
+{
+  "findings": [
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "characteristics[compound]",
+        "factor value[compound]"
+      ],
+      "rows": [
+        3
+      ],
+      "evidence": "Rule: 'factor value[compound]' disagrees with 'characteristics[compound]' at row 3. Row 3 has source name 'R1_CPI_EZH2' but compound 'DMSO' in the SDRF, whereas the description says three cultures received 5 uM CPI-169 and three received DMSO.",
+      "explanation": "Row 3 is internally inconsistent. Its source name indicates a CPI-169 sample, but its compound annotation says DMSO. An analysis that uses the compound column will place this EZH2 sample in the vehicle group and distort the antibody-by-treatment interaction. The likely cause is a copy-paste error in the compound annotation for this row.",
+      "suggested_fix": "Check against the lab records which treatment culture 1 EZH2 received. If it was CPI-169, set both characteristics[compound] and factor value[compound] to CPI-169 in row 3, and make the two columns agree."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "characteristics[compound]",
+        "characteristics[antibody]"
+      ],
+      "rows": [],
+      "evidence": "Rule: Condition (compound=DMSO, antibody=EZH2) has 4 samples; expected 3. The description states '2 antibodies x 2 treatments x 3 cultures per treatment'.",
+      "explanation": "The DMSO/EZH2 group has an extra sample, which makes the design unbalanced. The interaction contrast would be estimated from the wrong groups and the DMSO EZH2 variance would be biased. The likely cause is that row 3 (R1_CPI_EZH2) was mislabelled as DMSO.",
+      "suggested_fix": "Correct the compound label of row 3 to CPI-169 if that matches the experiment, so DMSO/EZH2 has 3 samples."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "characteristics[compound]",
+        "characteristics[antibody]"
+      ],
+      "rows": [],
+      "evidence": "Rule: Condition (compound=CPI-169, antibody=EZH2) has 2 samples; expected 3. The description states three CPI-169 cultures, each with an EZH2 and an IgG sample.",
+      "explanation": "The CPI-169/EZH2 group is missing a sample. This leaves only two replicates for one arm of the interaction and lowers power. It is the counterpart of the DMSO/EZH2 excess and probably has the same cause, the mislabelled row 3.",
+      "suggested_fix": "Relabel row 3 as CPI-169 so that the group has 3 samples. If that does not match the lab records, check for a missing or misassigned channel."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "characteristics[biological replicate]",
+        "characteristics[compound]",
+        "characteristics[antibody]"
+      ],
+      "rows": [
+        4
+      ],
+      "evidence": "Rule: Culture (compound=CPI-169, biological replicate=1) has antibody = ['IgG']; expected ['EZH2', 'IgG']. Row 4 'R1_CPI_IgG' has no CPI-169 EZH2 partner.",
+      "explanation": "The IgG control from CPI-169 culture 1 has no paired EZH2 sample. A paired analysis cannot use this culture, and the culture is effectively lost for the interaction. The likely cause is that its EZH2 partner (row 3) was labelled DMSO.",
+      "suggested_fix": "Fix the compound annotation of row 3 so that it pairs with row 4 as CPI-169 culture 1."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "characteristics[biological replicate]",
+        "characteristics[compound]",
+        "characteristics[antibody]"
+      ],
+      "rows": [
+        1,
+        2,
+        3
+      ],
+      "evidence": "Rule: Culture (compound=DMSO, biological replicate=1) has antibody = ['EZH2', 'EZH2', 'IgG']; expected ['EZH2', 'IgG']. Rows 1, 2 and 3 all carry DMSO and replicate 1.",
+      "explanation": "DMSO culture 1 appears to have two EZH2 samples, which is impossible when each culture gives one EZH2 and one IgG aliquot. The pairing structure is broken, and row 3 is counted as a second DMSO EZH2 for this culture. The likely cause is the mislabelled compound in row 3.",
+      "suggested_fix": "Change the compound of row 3 to CPI-169 so DMSO culture 1 has one EZH2 (row 1) and one IgG (row 2)."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule: 4 channel(s) not assigned to a sample: TMT132C, TMT133N, TMT133C, TMT134N. The description states 'Four channels are unused.'",
+      "explanation": "The four unassigned channels match the description (12 samples in a 16-plex kit). No samples are missing, but the four empty channels should be confirmed as intentionally empty in the experiment.",
+      "suggested_fix": "No change needed if these channels were left empty. Otherwise add the missing samples."
+    }
+  ],
+  "summary": "The SDRF is consistent with the description except for row 3 (R1_CPI_EZH2), which is annotated as DMSO although its source name indicates CPI-169. That one error explains the balance and pairing failures. The unused-channel warning matches the four empty channels stated in the description."
+}

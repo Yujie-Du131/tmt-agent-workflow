@@ -1,0 +1,40 @@
+{
+  "findings": [
+    {
+      "category": "metadata_mismatch",
+      "severity": "error",
+      "columns": [
+        "characteristics[organism]"
+      ],
+      "rows": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "evidence": "Description: \"RL cells (human diffuse large B-cell lymphoma cell line)\"; SDRF characteristics[organism]: \"mus musculus\"",
+      "explanation": "The description states the cells are human, but the SDRF lists the organism as mouse in every row. This would lead to the wrong species database being used for searching and would contradict the cell line annotation (RL, CVCL_1660 is human).",
+      "suggested_fix": "Change characteristics[organism] to \"Homo sapiens\" in all rows."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule check: \"4 channel(s) not assigned to a sample: TMT132C, TMT133N, TMT133C, TMT134N\"; Description: \"Four channels are unused.\"",
+      "explanation": "The 12 samples occupy 12 of the 16 TMTpro channels, so 4 channels are empty. This matches the description, which says four channels were left unused, so it is expected by design and not a data error. The empty channels will have no reporter signal, and the analysis should not treat them as samples.",
+      "suggested_fix": "No change needed to the sample rows. Optionally note in the SDRF or accompanying documentation that TMT132C, TMT133N, TMT133C and TMT134N were intentionally left empty."
+    }
+  ],
+  "summary": "One metadata mismatch: the organism is given as mus musculus although the description says the RL cells are human. The unused-channel warning (4 empty TMTpro channels) matches the description and is explained as intended. Other values (cell line, treatments, antibodies, 12 samples, trypsin, TMTpro) are consistent with the description."
+}

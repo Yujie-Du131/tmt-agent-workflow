@@ -1,0 +1,29 @@
+{
+  "findings": [
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [
+        1
+      ],
+      "evidence": "Rule check: \"Label 'TMT135N' is not a TMTpro16 channel\"; row 1 (R1_DMSO_EZH2) has comment[label] = TMT135N, while the description says \"one TMTpro 16-plex kit\".",
+      "explanation": "TMT135N exists only in the 18-plex TMTpro set, so it cannot be read in a 16-plex run. Quantification for the R1 DMSO EZH2 sample cannot be mapped to a reporter channel. That removes one of the three DMSO EZH2 replicates, and the paired comparison and the antibody-by-treatment interaction would be affected. The likely cause is a typo or a carry-over from an 18-plex template. TMT126 is the only unassigned channel at the start of the plex, so it is the probable intended label.",
+      "suggested_fix": "Check the lab records for the channel that actually labelled R1_DMSO_EZH2 and correct the label. If the sample was in the first channel, use TMT126."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule check: \"5 channel(s) not assigned to a sample: TMT126, TMT132C, TMT133N, TMT133C, TMT134N\"; the description says \"Four channels are unused\" (16 channels minus 12 samples).",
+      "explanation": "The SDRF shows five empty channels but the design implies four. The extra empty channel, TMT126, comes from the invalid TMT135N label in row 1. Once that label is corrected, the unused-channel count should match the description. If it does not, a sample may be missing or mislabelled.",
+      "suggested_fix": "Fix the row 1 label first, then re-run the check. Confirm that the remaining four channels (for example TMT132C, TMT133N, TMT133C, TMT134N) were left empty."
+    }
+  ],
+  "summary": "Two findings, both from the rule checks. Row 1 has an invalid label (TMT135N, not in a TMTpro16 kit), which also accounts for the unused-channel count of five instead of the four described. The other SDRF values agree with the description."
+}

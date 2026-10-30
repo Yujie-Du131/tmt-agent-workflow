@@ -1,0 +1,30 @@
+{
+  "findings": [
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [
+        1,
+        2
+      ],
+      "evidence": "Rule: \"Channel TMT126 ... is assigned to 2 samples\". SDRF rows 1 (R1_DMSO_EZH2) and 2 (R1_DMSO_IgG) both have comment[label] = TMT126.",
+      "explanation": "Two samples cannot share one TMT channel in a single run, so their reporter-ion intensities cannot be separated. The R1 DMSO EZH2 and IgG samples would be confounded, and the quantification and the antibody-by-treatment interaction would be unreliable for that culture. The channels otherwise run in order (126, 127N, 127C, 128N, ...), and TMT127N is skipped. This looks like a copy/paste slip in row 2, which should probably be TMT127N.",
+      "suggested_fix": "Check the labelling record and set row 2 (R1_DMSO_IgG) to its true channel, most likely TMT127N, so that all 12 samples have unique channels."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule: \"5 channel(s) not assigned to a sample: TMT127N, TMT132C, TMT133N, TMT133C, TMT134N\". The description says: \"Four channels are unused.\" 12 samples in a 16-plex kit leave 4 unused.",
+      "explanation": "The rule reports 5 empty channels, but the design (12 samples in a 16-plex kit) implies 4. The extra empty channel, TMT127N, is a consequence of the duplicated TMT126 assignment, not a real unused channel. Once the duplicate is fixed, the expected unused channels are TMT132C, TMT133N, TMT133C and TMT134N.",
+      "suggested_fix": "Fix the duplicate TMT126 assignment (likely row 2 \u2192 TMT127N). Then confirm that only TMT132C, TMT133N, TMT133C and TMT134N are empty."
+    }
+  ],
+  "summary": "The SDRF otherwise matches the description (RL cells, 12 samples, EZH2/IgG antibodies, DMSO/CPI-169, 3 replicates, trypsin, TMTpro). The one real problem is a duplicated TMT126 channel in rows 1 and 2. It also explains the unused-channel warning, which reports 5 empty channels instead of the 4 expected from the design."
+}

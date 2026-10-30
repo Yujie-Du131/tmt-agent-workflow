@@ -1,0 +1,29 @@
+{
+  "findings": [
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [
+        1
+      ],
+      "evidence": "Rule: \"Label 'TMT135N' is not a TMTpro16 channel\"; SDRF row 1 (R1_DMSO_EZH2) has comment[label] = TMT135N, while the description says \"one TMTpro 16-plex kit\".",
+      "explanation": "TMT135N exists only in the 18-plex TMTpro set, so it cannot be a channel in a 16-plex run. Quantification would fail or give wrong values for the DMSO EZH2 sample in culture 1, and this sample feeds the antibody-by-treatment interaction. The likely cause is a typo or a copy from a different kit layout. Every other sample starts from TMT127N, so TMT126 is the likely intended channel, and it is currently unassigned.",
+      "suggested_fix": "Check the labelling sheet for row 1. If it was TMT126, change the label to TMT126. Otherwise assign the channel actually used, which must be within TMT126 to TMT134N."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule: \"5 channel(s) not assigned to a sample: TMT126, TMT132C, TMT133N, TMT133C, TMT134N\"; the description says \"Four channels are unused\" (16 channels, 12 samples).",
+      "explanation": "The count of five unused channels is one more than the four described. The extra one is TMT126, which looks unassigned only because row 1 carries the invalid label TMT135N. If row 1 is corrected to TMT126, exactly four channels remain unused (TMT132C, TMT133N, TMT133C, TMT134N), matching the description. If the channels were not left empty, the plex layout would differ from the stated design.",
+      "suggested_fix": "Fix the row 1 label first, then confirm the four remaining unused channels (TMT132C, TMT133N, TMT133C, TMT134N) were left empty."
+    }
+  ],
+  "summary": "Two issues, both related. Row 1 has an invalid TMTpro16 label (TMT135N), probably meant to be TMT126. That error also makes the unused-channel count five instead of the four described. No mismatches were found between the description and the SDRF for cell line, organism, treatment, antibody, enzyme or sample number."
+}

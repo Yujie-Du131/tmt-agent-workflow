@@ -1,0 +1,40 @@
+{
+  "findings": [
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "comment[precursor mass tolerance]"
+      ],
+      "rows": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "evidence": "Rule check: 'comment[precursor mass tolerance]' has 2 different values within EZH2_IgG_CPI169_TMTpro16.raw. Row 6 (R2_DMSO_IgG) has '20 ppm' while the other 11 rows have '10 ppm'.",
+      "explanation": "All 12 samples were multiplexed into one TMT run and searched together as a single raw file, so they must share one precursor mass tolerance. A 20 ppm value on one channel conflicts with the 10 ppm on the rest. Search software would either take an arbitrary value or fail, and the SDRF no longer gives an unambiguous search setting. The description says nothing about different tolerances, so this is most likely a copy/paste or typing error in row 6.",
+      "suggested_fix": "Set row 6 to '10 ppm' so it matches the other rows, if 10 ppm was the tolerance actually used. Otherwise correct all rows to the value used in the search."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule check: 4 channel(s) not assigned to a sample: TMT132C, TMT133N, TMT133C, TMT134N. The description says: 'Four channels are unused.'",
+      "explanation": "The 12 samples use TMT126 to TMT132N of the 16-plex TMTpro kit, leaving four channels without samples. This matches the description (12 samples in a 16-plex kit), so it is most likely intentional. The empty channels will not affect quantification, but the search and normalization should not expect data in them.",
+      "suggested_fix": "No change needed if the four channels were deliberately left empty. Otherwise add the missing samples."
+    }
+  ],
+  "summary": "Two rule issues need explanation. The precursor mass tolerance differs in row 6 (20 ppm vs 10 ppm elsewhere), which is probably a typo, since all samples were searched as one run. The four unused TMTpro channels match the description. The other SDRF values I checked (organism, cell line, disease, compound, antibody, trypsin, 12 samples, TMTpro) agree with the description, so I report no further mismatches or naming inconsistencies."
+}

@@ -1,0 +1,40 @@
+{
+  "findings": [
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule check: 4 channel(s) not assigned to a sample: TMT132C, TMT133N, TMT133C, TMT134N. Description: \"the 12 samples were labelled with one TMTpro 16-plex kit ... Four channels are unused.\"",
+      "explanation": "12 samples use 12 of the 16 TMTpro channels, leaving 4 empty. This matches the description, which states four channels are unused, so it is expected and does not affect quantification. The only caveat is that empty channels can pick up minor isotopic impurity or noise signal, which should not be treated as samples.",
+      "suggested_fix": "No change needed to the SDRF. Optionally note in the metadata that TMT132C, TMT133N, TMT133C and TMT134N were intentionally left empty, and exclude them from analysis."
+    },
+    {
+      "category": "metadata_mismatch",
+      "severity": "error",
+      "columns": [
+        "characteristics[cell line]"
+      ],
+      "rows": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "evidence": "Description: \"RL cells (human diffuse large B-cell lymphoma cell line)\"; SDRF characteristics[cell line]: HEK293 (while cellosaurus name is RL, accession CVCL_1660, disease diffuse large B-cell lymphoma)",
+      "explanation": "HEK293 is a human embryonic kidney line and contradicts the described RL DLBCL cell line. It also conflicts with the SDRF's own cellosaurus name (RL) and disease columns, so the cell line annotation is wrong.",
+      "suggested_fix": "Change characteristics[cell line] to RL in all rows so it agrees with the cellosaurus name and the description."
+    }
+  ],
+  "summary": "The design is internally consistent apart from one error: characteristics[cell line] says HEK293, but the description and the SDRF's own cellosaurus and disease columns indicate RL (DLBCL). The four unused TMT channels flagged by the rule check match the description and are expected."
+}

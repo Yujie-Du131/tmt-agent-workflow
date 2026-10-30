@@ -1,0 +1,29 @@
+{
+  "findings": [
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [
+        1
+      ],
+      "evidence": "Rule: \"Label 'TMT135N' is not a TMTpro16 channel\"; the description says \"one TMTpro 16-plex kit\", and row 1 (R1_DMSO_EZH2) has comment[label] = TMT135N.",
+      "explanation": "TMT135N exists only in the 18-plex TMTpro set, not in the 16-plex kit. Sample R1_DMSO_EZH2 therefore cannot be mapped to a reporter ion channel. Quantification for this sample would fail or be misassigned, and the whole DMSO/EZH2 group would be missing one replicate. The likely cause is a typo or a wrong channel carried over from another plex. TMT126 is the only channel in the 16-plex set that is not otherwise assigned, so it is the probable intended label.",
+      "suggested_fix": "Confirm the real channel from the lab records. If R1_DMSO_EZH2 was in the first channel, change TMT135N to TMT126."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule: \"5 channel(s) not assigned to a sample: TMT126, TMT132C, TMT133N, TMT133C, TMT134N\"; the description says \"Four channels are unused\" for 12 samples in a 16-plex run.",
+      "explanation": "The design leaves 16 - 12 = 4 channels empty, but the check reports 5. The extra one, TMT126, appears unused only because row 1 carries the invalid label TMT135N. Once that label is fixed, the unused channels should be TMT132C, TMT133N, TMT133C and TMT134N. These four are the expected empty channels, so this warning is probably a side effect of the label error.",
+      "suggested_fix": "Correct the row 1 label first and re-run the check. Then confirm that TMT132C, TMT133N, TMT133C and TMT134N were left empty."
+    }
+  ],
+  "summary": "The SDRF matches the description on organism, cell line, treatment, antibody and sample count (12). One error: row 1 uses TMT135N, which is not a TMTpro16 channel. It is probably meant to be TMT126, and that would also explain why 5 channels are reported unused instead of the described 4."
+}

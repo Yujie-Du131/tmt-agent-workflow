@@ -1,0 +1,34 @@
+{
+  "findings": [
+    {
+      "category": "naming_inconsistency",
+      "severity": "error",
+      "columns": [
+        "source name",
+        "characteristics[compound]",
+        "factor value[compound]"
+      ],
+      "rows": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "evidence": "Row 1 source name 'R1_DMSO_EZH2' has compound 'CPI-169'; row 2 'R1_DMSO_IgG' has 'CPI-169'; row 3 'R1_CPI_EZH2' has 'DMSO'; row 4 'R1_CPI_IgG' has 'DMSO'. Replicates 2 and 3 are consistent (e.g. 'R2_DMSO_EZH2' has 'DMSO', 'R3_CPI_EZH2' has 'CPI-169').",
+      "explanation": "In replicate 1 the treatment in the source name is the opposite of the treatment in the compound and factor value columns. Either the names or the compound values were swapped. If the compound column is wrong, the antibody-by-treatment interaction for this culture will be inverted, which would add noise or bias to the main contrast. The totals still balance at 6 CPI-169 and 6 DMSO rows, so a count-based check would not catch this.",
+      "suggested_fix": "Check the lab records for which replicate-1 culture received CPI-169. Then correct either the source names (R1_DMSO_* and R1_CPI_*) or the compound and factor value[compound] values for rows 1-4 so they agree."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule check: '4 channel(s) not assigned to a sample: TMT132C, TMT133N, TMT133C, TMT134N'. The description says 'Four channels are unused' and the SDRF lists 12 samples on TMT126-TMT132N.",
+      "explanation": "A TMTpro 16-plex run with 12 samples leaves 4 channels free, which matches the description. The unused channels will not affect quantification as long as they were really empty. If they were not empty, there would be reporter-ion signal with no sample assigned, and any contamination or channel leakage into them would go unaccounted for. The likely cause is that only 12 samples were multiplexed.",
+      "suggested_fix": "Confirm the four channels were left empty. No SDRF change is needed if so. Otherwise add rows for any samples that were loaded in them."
+    }
+  ],
+  "summary": "Replicate 1 (rows 1-4) has source names whose treatment is the opposite of the compound and factor value[compound] columns, and this needs to be corrected. The four unused TMTpro channels agree with the description; the finding for them is informational."
+}

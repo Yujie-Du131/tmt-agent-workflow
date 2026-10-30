@@ -1,0 +1,27 @@
+{
+  "findings": [
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule check: \"4 channel(s) not assigned to a sample: TMT132C, TMT133N, TMT133C, TMT134N\". The description says: \"Four channels are unused.\"",
+      "explanation": "Only 12 of the 16 TMTpro channels carry samples, and the unused ones are the last four. This matches the design, so it is expected rather than a labelling error. Nothing is lost in the quantification, but the empty channels should not be treated as samples, and any signal in them is background or isotope impurity.",
+      "suggested_fix": "No change needed to the sample rows. Optionally note in the SDRF or the submission that TMT132C, TMT133N, TMT133C and TMT134N were intentionally left empty."
+    },
+    {
+      "category": "metadata_mismatch",
+      "severity": "error",
+      "columns": [
+        "comment[modification parameters]"
+      ],
+      "rows": [],
+      "evidence": "Description: \"labelled with one TMTpro 16-plex kit\". SDRF: \"NT=TMT6plex;AC=UNIMOD:737;TA=K;MT=Fixed\" and \"NT=TMT6plex;AC=UNIMOD:737;PP=Any N-term;MT=Fixed\".",
+      "explanation": "The labelling reagent in the modification parameters is TMT6plex, but the experiment used TMTpro 16-plex, as the channel names up to TMT134N also show. TMT6plex and TMTpro have different masses. Reanalysis with these parameters would search with the wrong fixed modification and give poor or incorrect identification and quantification.",
+      "suggested_fix": "Replace both TMT6plex entries with TMTpro (UNIMOD:2016), on K and on Any N-term, as fixed modifications."
+    }
+  ],
+  "summary": "The design is consistent with the description for organism, cell line, treatment, antibody, enzyme, sample count and channel assignment. The unused-channels warning is expected (4 empty channels, as stated). The one real mismatch is that the modification parameters list TMT6plex, whereas the description says TMTpro 16-plex."
+}

@@ -1,0 +1,83 @@
+{
+  "findings": [
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "factor value[compound]"
+      ],
+      "rows": [
+        8
+      ],
+      "evidence": "Rule: Unexpected level 'CPI169' in factor value[compound] (expected one of ['DMSO', 'CPI-169']); row 8 has 'CPI169' while the description says '5 uM CPI-169'",
+      "explanation": "The misspelt level 'CPI169' would be treated as a separate treatment group, so the R2 IgG sample would be split from the other CPI-169 samples. This breaks the antibody-by-treatment interaction contrast. The likely cause is a typo during SDRF entry.",
+      "suggested_fix": "Change 'CPI169' to 'CPI-169' in factor value[compound] and characteristics[compound] for row 8."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "factor value[compound]",
+        "factor value[antibody]"
+      ],
+      "rows": [],
+      "evidence": "Rule: Condition (compound=CPI-169, antibody=IgG) has 2 samples; expected 3. The description states 3 cultures per treatment.",
+      "explanation": "The CPI-169/IgG group appears to have only 2 replicates, which would give unbalanced groups and lower power for the interaction contrast. This is a consequence of the 'CPI169' typo in row 8, not a missing sample.",
+      "suggested_fix": "Correct the 'CPI169' typo; the group will then have 3 samples."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "characteristics[compound]",
+        "characteristics[biological replicate]",
+        "characteristics[antibody]"
+      ],
+      "rows": [
+        7,
+        8
+      ],
+      "evidence": "Rule: Culture (compound=CPI-169, biological replicate=2) has antibody = ['EZH2']; expected ['EZH2','IgG']; Culture (compound=CPI169, biological replicate=2) has antibody = ['IgG']. The description says EZH2 and IgG from the same culture are paired.",
+      "explanation": "The R2 CPI-169 EZH2/IgG pair is split into two apparent cultures because of the spelling difference, so the pairing is lost and the design appears to have 7 cultures instead of 6. A paired model would treat these as unpaired or fail.",
+      "suggested_fix": "Fix 'CPI169' to 'CPI-169' in row 8 so rows 7 and 8 form one paired culture."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "characteristics[biological replicate]",
+        "characteristics[compound]"
+      ],
+      "rows": [],
+      "evidence": "Rule: Found 7 cultures; expected 6. The description says 'six independent cultures'.",
+      "explanation": "The count of 7 cultures is an artefact of the misspelt compound level splitting one culture in two. Culture-level blocking would have the wrong number of levels.",
+      "suggested_fix": "Correct the compound spelling in row 8; the culture count should return to 6."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule: 4 channel(s) not assigned to a sample: TMT132C, TMT133N, TMT133C, TMT134N. The description says 'Four channels are unused.'",
+      "explanation": "The 4 empty channels match the description (16 channels minus 12 samples), so this is expected and has no impact on the analysis.",
+      "suggested_fix": "No change needed; just confirm these channels were left empty."
+    },
+    {
+      "category": "naming_inconsistency",
+      "severity": "error",
+      "columns": [
+        "characteristics[compound]",
+        "factor value[compound]"
+      ],
+      "rows": [
+        8
+      ],
+      "evidence": "Row 8 has 'CPI169' while rows 3, 4, 7, 11 and 12 have 'CPI-169'",
+      "explanation": "The same compound is written in two ways.",
+      "suggested_fix": "Use 'CPI-169' consistently in both columns for row 8."
+    }
+  ],
+  "summary": "The main problem is a single typo, 'CPI169' instead of 'CPI-169', in row 8 (R2_CPI_IgG). It causes the factor level, balance and pairing errors and the culture count of 7. The four unused channels match the description. No other contradictions with the description were found."
+}

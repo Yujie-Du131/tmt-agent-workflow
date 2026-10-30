@@ -1,0 +1,29 @@
+{
+  "findings": [
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "comment[precursor mass tolerance]"
+      ],
+      "rows": [
+        6
+      ],
+      "evidence": "Rule: 'comment[precursor mass tolerance]' has 2 different values within EZH2_IgG_CPI169_TMTpro16.raw. Row 6 (R2_DMSO_IgG, TMT129N) says '20 ppm' while the other 11 rows say '10 ppm'.",
+      "explanation": "All 12 samples were combined into one TMT run and acquired as a single raw file, so they share one precursor mass tolerance for the database search. Two different values within one file are contradictory. Software reading the SDRF may apply the wrong tolerance or fail. The description says nothing to justify a different tolerance for one channel, so row 6 is most likely a typo or copy-paste error.",
+      "suggested_fix": "Set comment[precursor mass tolerance] to the value actually used for the search (probably 10 ppm) in all rows, correcting row 6 from 20 ppm."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule: 4 channel(s) not assigned to a sample: TMT132C, TMT133N, TMT133C, TMT134N. The description states: 'Four channels are unused.'",
+      "explanation": "The SDRF assigns 12 samples to TMT126 through TMT132N of the 16-plex kit. This matches the description, which says 12 samples and four unused channels. The empty channels are therefore expected and should not cause analysis problems, such as missing samples or wrong normalisation. They are flagged only so that the empty channels are confirmed as intentional.",
+      "suggested_fix": "No change needed. Optionally note in the project documentation that TMT132C, TMT133N, TMT133C and TMT134N were intentionally left empty."
+    }
+  ],
+  "summary": "The SDRF matches the description for organism, cell line, treatments, antibodies, the 12-sample design and enzyme. Two rule issues were explained. One is the inconsistent precursor mass tolerance (20 ppm in row 6 versus 10 ppm elsewhere), which is probably a typo. The other is the four unused TMT channels, which the description says are expected."
+}

@@ -1,0 +1,30 @@
+{
+  "findings": [
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "source name"
+      ],
+      "rows": [
+        9,
+        10
+      ],
+      "evidence": "Rule check: \"Source name 'R3_DMSO_EZH2' is used more than once\" (0-based rows 8, 9). SDRF row 9: R3_DMSO_EZH2 (EZH2, TMT130C); row 10: R3_DMSO_EZH2 (IgG, TMT131N).",
+      "explanation": "Two different samples (EZH2 and IgG from DMSO culture 3) share one source name, so they look like the same biological source. This breaks the pairing of EZH2 and IgG samples and may cause one sample to be merged or dropped. The likely cause is a copy-paste error where row 10 was not renamed from EZH2 to IgG. The description says each aliquot was processed separately, so these are distinct samples with distinct names.",
+      "suggested_fix": "Rename the source name in row 10 to 'R3_DMSO_IgG', consistent with the other IgG rows."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule check: \"4 channel(s) not assigned to a sample: TMT132C, TMT133N, TMT133C, TMT134N.\" Description: \"Four channels are unused.\"",
+      "explanation": "The 12 samples use 12 of the 16 TMTpro channels, which matches the description, which states that four channels are unused. This is expected and has no effect on the analysis, apart from the usual caveat that empty channels carry no sample.",
+      "suggested_fix": "No change needed; the unused channels are as described."
+    }
+  ],
+  "summary": "One error: the duplicated source name 'R3_DMSO_EZH2' in rows 9 and 10, where row 10 is an IgG sample and should be named 'R3_DMSO_IgG'. The four unused channels match the description. All other values agree with the description."
+}

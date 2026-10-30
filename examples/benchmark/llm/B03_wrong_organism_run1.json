@@ -1,0 +1,40 @@
+{
+  "findings": [
+    {
+      "category": "metadata_mismatch",
+      "severity": "error",
+      "columns": [
+        "characteristics[organism]"
+      ],
+      "rows": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "evidence": "Description: \"RL cells (human diffuse large B-cell lymphoma cell line)\"; SDRF characteristics[organism]: \"mus musculus\"",
+      "explanation": "The description states that RL is a human cell line. The SDRF lists the organism as mouse in every row, which contradicts the description. The cell line (RL, CVCL_1660) is human, so the organism value is wrong. Searching against a mouse database would give wrong protein identifications.",
+      "suggested_fix": "Change characteristics[organism] to \"Homo sapiens\" in all rows."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule check: \"4 channel(s) not assigned to a sample: TMT132C, TMT133N, TMT133C, TMT134N.\" The description says: \"Four channels are unused.\"",
+      "explanation": "A TMTpro 16-plex kit has 16 channels, and 12 samples use 12 of them. The 4 unused channels (TMT132C, TMT133N, TMT133C, TMT134N) match the description, so this is expected. They are empty and will add no data, though they may carry some isotopic carry-over signal. This does not affect the analysis as long as the channels were genuinely left empty.",
+      "suggested_fix": "No change needed. Optionally note in the SDRF or the submission that these channels were intentionally left empty."
+    }
+  ],
+  "summary": "The SDRF contradicts the description on organism: RL is human, but the SDRF says mus musculus in all rows. The unused-channel warning (4 empty channels) matches the description and is expected. The design (12 samples, 2 antibodies x 2 treatments x 3 cultures), the labels, the cell line, the compounds and the antibodies are otherwise consistent with the description."
+}

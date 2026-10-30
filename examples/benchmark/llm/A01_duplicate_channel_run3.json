@@ -1,0 +1,30 @@
+{
+  "findings": [
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [
+        1,
+        2
+      ],
+      "evidence": "Row 1 (R1_DMSO_EZH2) and row 2 (R1_DMSO_IgG) are both labelled TMT126, while the description says the 12 samples were labelled with 12 distinct channels of one TMTpro 16-plex kit.",
+      "explanation": "Two samples share one TMT channel in the same run, so their reporter-ion intensities cannot be separated. The R1 DMSO EZH2 and IgG samples would be conflated, which breaks the pairing and the antibody-by-treatment interaction for replicate 1. The likely cause is a copy-paste error. The channel sequence runs 126, 127C, 128N and so on, and TMT127N is missing, so row 2 was probably meant to be TMT127N.",
+      "suggested_fix": "Check the labelling sheet and set row 2 (R1_DMSO_IgG) to its true channel, probably TMT127N. Keep all 12 channels unique."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "The rule check reports 5 unused channels (TMT127N, TMT132C, TMT133N, TMT133C, TMT134N), but the description says 'Four channels are unused.'",
+      "explanation": "The count of 5 follows from the duplicated TMT126 assignment, which leaves only 11 distinct channels in use. With 12 samples on a 16-plex kit, 4 channels should be empty. TMT127N appears unused only because of the duplicate. Once row 2 is corrected, the unused channels should be TMT132C, TMT133N, TMT133C and TMT134N, matching the description.",
+      "suggested_fix": "Fix the duplicate channel, then confirm the 4 remaining empty channels (likely TMT132C, TMT133N, TMT133C, TMT134N) were left unlabelled."
+    }
+  ],
+  "summary": "The biological metadata (cell line, organism, disease, treatments, antibodies, 12 samples, 3 replicates) agrees with the description. The one real problem is the duplicated TMT126 channel in rows 1 and 2, which probably should be TMT127N. This also explains why 5 channels are reported unused instead of the 4 described."
+}

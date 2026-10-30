@@ -1,0 +1,77 @@
+{
+  "findings": [
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "characteristics[antibody]",
+        "factor value[antibody]",
+        "characteristics[compound]"
+      ],
+      "rows": [
+        1,
+        2
+      ],
+      "evidence": "Rule: 'Condition (compound=DMSO, antibody=EZH2) has 4 samples; expected 3'. Row 2 (R1_DMSO_IgG) has antibody EZH2, yet the description gives 3 EZH2 cultures per treatment.",
+      "explanation": "The DMSO/EZH2 group has an extra sample. The EZH2-vs-IgG contrast and the antibody-by-treatment interaction would be estimated with the wrong group sizes and a contaminated EZH2 group. The likely cause is that row 2 was copied from row 1 and its antibody was never changed to IgG.",
+      "suggested_fix": "Check the real antibody for the TMT127N sample. If it is the IgG control, set characteristics[antibody] and factor value[antibody] to IgG in row 2."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "characteristics[antibody]",
+        "factor value[antibody]"
+      ],
+      "rows": [
+        2
+      ],
+      "evidence": "Rule: 'Condition (compound=DMSO, antibody=IgG) has 2 samples; expected 3'. The description expects 3 DMSO IgG controls, but only rows 6 and 10 are labelled IgG.",
+      "explanation": "The DMSO/IgG control group is short by one sample, so the IgG baseline for DMSO has only 2 replicates. This reduces power and unbalances the interaction contrast. It is the other side of the DMSO/EZH2 excess and likely has the same cause, the mislabelled antibody in row 2.",
+      "suggested_fix": "Correct row 2 antibody to IgG, which would restore 3 DMSO/IgG samples. Then re-run the balance check."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "characteristics[biological replicate]",
+        "characteristics[antibody]",
+        "factor value[antibody]"
+      ],
+      "rows": [
+        1,
+        2
+      ],
+      "evidence": "Rule: 'Culture (compound=DMSO, biological replicate=1) has antibody = [EZH2, EZH2]; expected [EZH2, IgG]'. Rows 1 and 2 both have antibody EZH2.",
+      "explanation": "The description says each culture yields one EZH2 and one IgG aliquot, which are paired. Here the DMSO replicate 1 pair has two EZH2 samples, so the pairing is broken and a paired model cannot be fitted for this culture. The likely cause is a copy-paste error in row 2.",
+      "suggested_fix": "Set row 2 antibody to IgG in both characteristics[antibody] and factor value[antibody], so replicate 1 DMSO has one EZH2 and one IgG sample."
+    },
+    {
+      "category": "naming_inconsistency",
+      "severity": "error",
+      "columns": [
+        "source name",
+        "characteristics[antibody]",
+        "factor value[antibody]"
+      ],
+      "rows": [
+        2
+      ],
+      "evidence": "source name 'R1_DMSO_IgG' but characteristics[antibody] and factor value[antibody] are 'EZH2'.",
+      "explanation": "The sample name indicates an IgG control while the antibody columns say EZH2. The same sample is described in two conflicting ways, which suggests the antibody columns are wrong.",
+      "suggested_fix": "Confirm the sample identity and make the source name and antibody columns agree. The likely correction is antibody = IgG."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule: '4 channel(s) not assigned to a sample: TMT132C, TMT133N, TMT133C, TMT134N'. The description says 'Four channels are unused' with 12 samples in a 16-plex kit.",
+      "explanation": "The unused channels match the description of 12 samples in a TMTpro 16-plex run, so this is expected. It should not affect the analysis, provided those channels really held no sample and there was no reporter-ion leakage or carry-over into them.",
+      "suggested_fix": "No change is needed if the channels were left empty. Otherwise add the missing samples."
+    }
+  ],
+  "summary": "Row 2 (R1_DMSO_IgG, TMT127N) is labelled antibody EZH2 although its name and the design indicate an IgG control. This causes the two balance errors and the pairing error for DMSO replicate 1. The four unused channels match the description."
+}

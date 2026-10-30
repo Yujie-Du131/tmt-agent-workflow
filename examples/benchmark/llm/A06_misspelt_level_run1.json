@@ -1,0 +1,83 @@
+{
+  "findings": [
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "factor value[compound]"
+      ],
+      "rows": [
+        8
+      ],
+      "evidence": "Rule: Unexpected level 'CPI169' in factor value[compound] (expected one of ['DMSO', 'CPI-169']); row 8 has 'CPI169' while the other treated rows have 'CPI-169'",
+      "explanation": "The misspelt level creates a spurious extra treatment group. Row 8 would be analysed as a separate condition rather than as CPI-169-treated IgG, which breaks the antibody-by-treatment interaction contrast. The likely cause is a typo (missing hyphen) in manual entry.",
+      "suggested_fix": "Change 'CPI169' to 'CPI-169' in row 8 in both characteristics[compound] and factor value[compound]."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "factor value[compound]",
+        "factor value[antibody]"
+      ],
+      "rows": [],
+      "evidence": "Rule: Condition (compound=CPI-169, antibody=IgG) has 2 samples; expected 3",
+      "explanation": "The CPI-169 IgG group appears to have only 2 samples, which makes the design look unbalanced and reduces the apparent replication for the interaction test. This is a knock-on effect of the 'CPI169' typo in row 8, not of a missing sample.",
+      "suggested_fix": "Fix the 'CPI169' spelling in row 8 so that the group has 3 samples."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "characteristics[compound]",
+        "characteristics[biological replicate]",
+        "characteristics[antibody]"
+      ],
+      "rows": [
+        7,
+        8
+      ],
+      "evidence": "Rule: Culture (compound=CPI-169, biological replicate=2) has antibody = ['EZH2']; expected ['EZH2', 'IgG'] and Culture (compound=CPI169, biological replicate=2) has antibody = ['IgG']; expected ['EZH2', 'IgG']",
+      "explanation": "The EZH2 and IgG samples from culture R2 (CPI-169) are not recognised as a pair because of the differing compound spelling. Paired analysis would then treat them as separate cultures, losing the pairing needed for the antibody-by-treatment interaction. Cause: the same 'CPI169' typo.",
+      "suggested_fix": "Correct the compound value in row 8 to 'CPI-169' so rows 7 and 8 are paired."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "characteristics[compound]",
+        "characteristics[biological replicate]"
+      ],
+      "rows": [],
+      "evidence": "Rule: Found 7 cultures; expected 6",
+      "explanation": "The description states six independent cultures, but the typo splits one culture into two, giving 7. This would inflate the number of cultures and distort the pairing and degrees of freedom in the model.",
+      "suggested_fix": "Fix the 'CPI169' typo in row 8; the culture count should then return to 6."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule: 4 channel(s) not assigned to a sample: TMT132C, TMT133N, TMT133C, TMT134N",
+      "explanation": "Four TMTpro 16-plex channels are unused, which is consistent with the description (12 samples in a 16-plex kit, 'Four channels are unused'). No impact on analysis beyond confirming they were empty.",
+      "suggested_fix": "No change needed if these channels were intentionally left empty; optionally note this in the metadata."
+    },
+    {
+      "category": "naming_inconsistency",
+      "severity": "error",
+      "columns": [
+        "characteristics[compound]",
+        "factor value[compound]"
+      ],
+      "rows": [
+        8
+      ],
+      "evidence": "Row 8 has 'CPI169' whereas rows 3, 4, 7, 11, 12 use 'CPI-169' (description: '5 uM CPI-169')",
+      "explanation": "The same compound is written in two different ways, with the hyphen missing in row 8.",
+      "suggested_fix": "Use 'CPI-169' consistently in both columns."
+    }
+  ],
+  "summary": "The SDRF otherwise matches the description (RL cells, DLBCL, trypsin, TMTpro, 12 samples, 4 unused channels). The main problem is a 'CPI169' typo in row 8 that splits a treatment level and breaks balance and pairing; correcting it should resolve all the rule errors."
+}

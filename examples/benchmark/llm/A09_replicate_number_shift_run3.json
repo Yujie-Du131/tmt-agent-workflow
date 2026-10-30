@@ -1,0 +1,48 @@
+{
+  "findings": [
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "characteristics[biological replicate]",
+        "characteristics[antibody]",
+        "characteristics[compound]"
+      ],
+      "rows": [
+        7
+      ],
+      "evidence": "Rule: culture (CPI-169, replicate 2) has antibody ['EZH2'], expected ['EZH2','IgG']. The description says \"The EZH2 and IgG samples from the same culture are paired\"; row 7 (R2_CPI_EZH2) has no IgG partner under replicate 2.",
+      "explanation": "The CPI-169 culture 2 EZH2 sample has no IgG partner, so the paired EZH2-vs-IgG contrast and the antibody-by-treatment interaction cannot be modelled correctly for this culture. The likely cause is that the IgG sample of this culture, R2_CPI_IgG (row 8), was given the wrong replicate number.",
+      "suggested_fix": "Set characteristics[biological replicate] of row 8 (R2_CPI_IgG) to 2, then check that every culture has exactly one EZH2 and one IgG sample."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "characteristics[biological replicate]",
+        "characteristics[antibody]",
+        "source name"
+      ],
+      "rows": [
+        8,
+        11,
+        12
+      ],
+      "evidence": "Rule: culture (CPI-169, replicate 3) has antibody ['EZH2','IgG','IgG'], expected ['EZH2','IgG']. Row 8 has source name \"R2_CPI_IgG\" but biological replicate \"3\".",
+      "explanation": "Replicate 3 under CPI-169 contains two IgG samples, which breaks the pairing and would make a design matrix treat two different cultures as one. The source name R2_CPI_IgG says culture 2, so the replicate value 3 in row 8 is probably a typo. This also explains the missing IgG in culture 2.",
+      "suggested_fix": "Change the biological replicate of row 8 from 3 to 2. Rows 11 and 12 (R3_CPI_EZH2 and R3_CPI_IgG) then form the correct pair."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule: 4 channels not assigned to a sample: TMT132C, TMT133N, TMT133C, TMT134N. The description says \"Four channels are unused.\"",
+      "explanation": "The 12 samples use 12 of the 16 TMTpro channels, which matches the description. The empty channels should not be quantified, and they are not a design problem. They are only a concern if samples were meant to occupy them.",
+      "suggested_fix": "No change needed if these four channels were left empty. Optionally note in the sample metadata or data-processing parameters that they were empty."
+    }
+  ],
+  "summary": "The design matches the description in cell line, organism, treatment, antibody, trypsin and sample count (12 samples, TMTpro 16-plex with 4 unused channels). The one real problem is the biological replicate value in row 8 (R2_CPI_IgG), which is 3 instead of 2. This breaks the pairing for CPI-169 cultures 2 and 3. The unused-channel warning is consistent with the description."
+}

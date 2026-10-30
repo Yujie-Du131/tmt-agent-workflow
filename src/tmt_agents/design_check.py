@@ -255,7 +255,10 @@ REVIEW_SYSTEM = (
     "written in different ways (e.g. a misspelt level).\n"
     "4. If the description says nothing about a column, do not speculate "
     "about it.\n"
-    "5. If there are no problems, return an empty findings list."
+    "5. Do not comment on formatting conventions such as capitalisation or "
+    "ontology term style; a separate validator checks format.\n"
+    "6. If there are no problems, return an empty findings list."
+
 )
 
 

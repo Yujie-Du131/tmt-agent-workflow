@@ -1,0 +1,16 @@
+{
+  "findings": [
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule check: \"4 channel(s) not assigned to a sample: TMT132C, TMT133N, TMT133C, TMT134N.\" The description says: \"Four channels are unused.\"",
+      "explanation": "Only 12 of the 16 TMTpro channels carry samples, and the 4 empty channels match the description (12 samples in a 16-plex kit). The analysis is not affected, provided those channels were truly left empty and no sample was loaded in them. Normalisation and quantification should ignore these channels. The likely cause is the 12-sample design in a 16-plex kit.",
+      "suggested_fix": "No change needed if the channels were left empty. Make sure the quantification software excludes TMT132C, TMT133N, TMT133C and TMT134N. Optionally record the empty channels in the SDRF or the submission notes."
+    }
+  ],
+  "summary": "The SDRF agrees with the description on organism, cell line, disease, treatments, antibodies, trypsin digestion, TMTpro labelling and the 12 samples. The only item is the expected unused-channel warning (4 empty channels), which matches the described design. No mismatches or naming inconsistencies were found."
+}

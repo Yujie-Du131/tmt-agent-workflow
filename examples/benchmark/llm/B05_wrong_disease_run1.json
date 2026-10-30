@@ -1,0 +1,40 @@
+{
+  "findings": [
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule check: 4 channel(s) not assigned to a sample: TMT132C, TMT133N, TMT133C, TMT134N. Description: \"Four channels are unused.\"",
+      "explanation": "Only 12 of the 16 TMTpro channels are assigned to samples, which matches the description (12 samples in a 16-plex kit). The unused channels are probably empty by design. They should not be quantified as samples, and any signal in them is just background or isotopic impurity carryover.",
+      "suggested_fix": "No change to the SDRF is needed. Make sure the analysis excludes TMT132C, TMT133N, TMT133C and TMT134N, and note in the submission that they were left empty."
+    },
+    {
+      "category": "metadata_mismatch",
+      "severity": "error",
+      "columns": [
+        "characteristics[disease]"
+      ],
+      "rows": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "evidence": "Description: \"RL cells (human diffuse large B-cell lymphoma cell line)\" vs SDRF characteristics[disease]: \"Burkitt lymphoma\"",
+      "explanation": "The disease annotation contradicts the description, which says the RL cell line is a diffuse large B-cell lymphoma line. The SDRF says Burkitt lymphoma in every row.",
+      "suggested_fix": "Change characteristics[disease] to diffuse large B-cell lymphoma in all rows, assuming the description is correct."
+    }
+  ],
+  "summary": "The SDRF agrees with the description on organism, cell line, treatments, antibodies, trypsin, TMTpro and the 12-sample design. The one mismatch is the disease, which is Burkitt lymphoma in the SDRF but diffuse large B-cell lymphoma in the description. The four unused TMTpro channels match the description and need no correction."
+}

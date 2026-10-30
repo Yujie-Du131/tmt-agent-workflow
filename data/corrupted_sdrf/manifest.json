@@ -1,0 +1,159 @@
+[
+  {
+    "id": "00_clean",
+    "category": "-",
+    "description": "Correct SDRF (false-positive control).",
+    "expected_rules": [],
+    "target_columns": []
+  },
+  {
+    "id": "A01_duplicate_channel",
+    "category": "A",
+    "description": "R1_DMSO_IgG relabelled TMT126, the channel already used by R1_DMSO_EZH2.",
+    "expected_rules": [
+      "unique_channel"
+    ],
+    "target_columns": []
+  },
+  {
+    "id": "A02_label_outside_plex",
+    "category": "A",
+    "description": "R1_DMSO_EZH2 labelled TMT135N, which exists only in TMTpro 18-plex.",
+    "expected_rules": [
+      "label_in_plex"
+    ],
+    "target_columns": []
+  },
+  {
+    "id": "A03_missing_sample",
+    "category": "A",
+    "description": "Row for R3_CPI_IgG deleted.",
+    "expected_rules": [
+      "balance",
+      "pairing"
+    ],
+    "target_columns": []
+  },
+  {
+    "id": "A04_antibody_mislabelled",
+    "category": "A",
+    "description": "R1_DMSO_IgG annotated as EZH2, so culture DMSO-1 has two EZH2 samples.",
+    "expected_rules": [
+      "balance",
+      "pairing"
+    ],
+    "target_columns": []
+  },
+  {
+    "id": "A05_factor_disagrees",
+    "category": "A",
+    "description": "factor value[compound] of R1_CPI_EZH2 set to DMSO; characteristics left as CPI-169.",
+    "expected_rules": [
+      "factor_matches_characteristics"
+    ],
+    "target_columns": []
+  },
+  {
+    "id": "A06_misspelt_level",
+    "category": "A",
+    "description": "Compound of R2_CPI_IgG written as 'CPI169' instead of 'CPI-169'.",
+    "expected_rules": [
+      "factor_levels"
+    ],
+    "target_columns": [
+      "characteristics[compound]",
+      "factor value[compound]"
+    ]
+  },
+  {
+    "id": "A07_inconsistent_tolerance",
+    "category": "A",
+    "description": "Precursor tolerance of one channel set to 20 ppm; the others are 10 ppm.",
+    "expected_rules": [
+      "run_level_consistency"
+    ],
+    "target_columns": []
+  },
+  {
+    "id": "A08_duplicate_source_name",
+    "category": "A",
+    "description": "R3_DMSO_IgG renamed R3_DMSO_EZH2, duplicating another sample name.",
+    "expected_rules": [
+      "unique_source_name"
+    ],
+    "target_columns": []
+  },
+  {
+    "id": "A09_replicate_number_shift",
+    "category": "A",
+    "description": "Biological replicate of R2_CPI_IgG set to 3: condition counts stay balanced, but culture CPI-2 loses its IgG and CPI-3 has two.",
+    "expected_rules": [
+      "pairing"
+    ],
+    "target_columns": []
+  },
+  {
+    "id": "B01_wrong_cell_line",
+    "category": "B",
+    "description": "Cell line written as HEK293 (description: RL).",
+    "expected_rules": [],
+    "target_columns": [
+      "characteristics[cell line]"
+    ]
+  },
+  {
+    "id": "B02_wrong_enzyme",
+    "category": "B",
+    "description": "Enzyme written as Lys-C (description: trypsin).",
+    "expected_rules": [],
+    "target_columns": [
+      "comment[cleavage agent details]"
+    ]
+  },
+  {
+    "id": "B03_wrong_organism",
+    "category": "B",
+    "description": "Organism written as mus musculus (description: human RL cells).",
+    "expected_rules": [],
+    "target_columns": [
+      "characteristics[organism]"
+    ]
+  },
+  {
+    "id": "B04_wrong_tmt_reagent",
+    "category": "B",
+    "description": "TMT modifications written as TMT6plex (description: TMTpro 16-plex).",
+    "expected_rules": [],
+    "target_columns": [
+      "comment[modification parameters]"
+    ]
+  },
+  {
+    "id": "B05_wrong_disease",
+    "category": "B",
+    "description": "Disease written as Burkitt lymphoma (description: diffuse large B-cell lymphoma).",
+    "expected_rules": [],
+    "target_columns": [
+      "characteristics[disease]"
+    ]
+  },
+  {
+    "id": "B06_treatment_swapped_names_kept",
+    "category": "B",
+    "description": "Compound of cultures DMSO-1 and CPI-1 swapped in both annotation columns; counts stay balanced, but the sample names still say the original treatment.",
+    "expected_rules": [],
+    "target_columns": [
+      "characteristics[compound]",
+      "factor value[compound]"
+    ]
+  },
+  {
+    "id": "C01_channels_swapped",
+    "category": "C",
+    "description": "Channels of R1_DMSO_EZH2 and R1_CPI_EZH2 swapped. The description does not give the channel layout, so nothing can detect this.",
+    "expected_rules": [],
+    "target_columns": [
+      "comment[label]"
+    ]
+  }
+]

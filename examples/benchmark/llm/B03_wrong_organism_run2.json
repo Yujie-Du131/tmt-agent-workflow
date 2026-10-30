@@ -1,0 +1,40 @@
+{
+  "findings": [
+    {
+      "category": "metadata_mismatch",
+      "severity": "error",
+      "columns": [
+        "characteristics[organism]"
+      ],
+      "rows": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "evidence": "Description: \"RL cells (human diffuse large B-cell lymphoma cell line)\"; SDRF characteristics[organism]: \"mus musculus\" in every row.",
+      "explanation": "RL is a human cell line, and the SDRF cell line (RL), Cellosaurus accession (CVCL_1660) and disease entries all agree with that. The organism value contradicts the description. If it is left as is, downstream searches may use a mouse protein database and annotation would be wrong.",
+      "suggested_fix": "Change characteristics[organism] to \"Homo sapiens\" in all rows, and check that the search used the human proteome database."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule check: \"4 channel(s) not assigned to a sample: TMT132C, TMT133N, TMT133C, TMT134N.\" Description: \"Four channels are unused.\"",
+      "explanation": "12 samples occupy 12 of the 16 TMTpro channels, leaving four empty. This matches the description (12 samples in a 16-plex kit), so the likely cause is the design itself, not a missing or mislabelled sample. The empty channels carry no sample, but they may contain some signal from isotopic impurities or noise. They should be excluded from quantification and normalisation.",
+      "suggested_fix": "No change to the SDRF is needed. Ensure the four empty channels are left out of the analysis, and note in the submission that they were intentionally unused."
+    }
+  ],
+  "summary": "The SDRF is consistent with the description except for the organism, which is given as mus musculus although RL is a human cell line. The four unused TMTpro channels match the stated design and are expected."
+}

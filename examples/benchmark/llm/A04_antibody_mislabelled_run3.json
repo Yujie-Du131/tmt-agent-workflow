@@ -1,0 +1,44 @@
+{
+  "findings": [
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "characteristics[antibody]",
+        "factor value[antibody]"
+      ],
+      "rows": [
+        2
+      ],
+      "evidence": "Row 2 source name 'R1_DMSO_IgG' has characteristics[antibody]=EZH2 and factor value[antibody]=EZH2, while the description says each culture has one EZH2 and one IgG aliquot",
+      "explanation": "The DMSO EZH2 group has 4 samples and the DMSO IgG group has only 2. Because of this, the culture 1 DMSO pair has two EZH2 samples and no IgG. The antibody-by-treatment interaction would be biased and the paired design broken. The likely cause is a copy-paste error where the IgG label in row 2 was left as EZH2, which the source name indicates should be IgG.",
+      "suggested_fix": "Change characteristics[antibody] and factor value[antibody] in row 2 to IgG, which restores 3 samples per condition and the pairing for culture 1 DMSO."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Unused channels: TMT132C, TMT133N, TMT133C, TMT134N; description: 'Four channels are unused.'",
+      "explanation": "12 samples occupy 12 of the 16 TMTpro channels, and the four unassigned channels match the description. This is expected and has no analysis impact beyond confirming the channels were left empty.",
+      "suggested_fix": "No change needed, other than confirming the four channels were truly empty."
+    },
+    {
+      "category": "metadata_mismatch",
+      "severity": "error",
+      "columns": [
+        "characteristics[antibody]",
+        "factor value[antibody]"
+      ],
+      "rows": [
+        2
+      ],
+      "evidence": "Description: 'One aliquot was labelled ... with an anti-EZH2 antibody, and the other with a rabbit IgG isotype control' (each culture has one of each); SDRF row 2 'R1_DMSO_IgG' lists antibody EZH2",
+      "explanation": "The sample name indicates an IgG control, but the antibody columns say EZH2. This contradicts the description of 6 EZH2 and 6 IgG samples.",
+      "suggested_fix": "Set antibody to IgG for row 2 in both the characteristics and factor value columns."
+    }
+  ],
+  "summary": "One row is mislabelled: row 2 (R1_DMSO_IgG) is annotated as EZH2 instead of IgG. This causes the balance and pairing errors flagged by the rule checks. The four unused channels match the description."
+}

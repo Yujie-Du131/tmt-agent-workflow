@@ -1,0 +1,44 @@
+{
+  "findings": [
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "source name"
+      ],
+      "rows": [
+        9,
+        10
+      ],
+      "evidence": "Rule: \"Source name 'R3_DMSO_EZH2' is used more than once\" (0-based rows 8, 9). SDRF row 9: R3_DMSO_EZH2 (EZH2, TMT130C); row 10: R3_DMSO_EZH2 (IgG, TMT131N).",
+      "explanation": "Two different samples (EZH2 and IgG from culture 3, DMSO) share one source name, so they would be treated as the same biological material. This breaks the unique sample identity and the EZH2/IgG pairing for replicate 3 DMSO, and can corrupt design-matrix construction. The likely cause is a copy-paste error where the row for the IgG sample kept the EZH2 name; row 10 should be R3_DMSO_IgG, consistent with the other rows.",
+      "suggested_fix": "Rename the source name in row 10 from 'R3_DMSO_EZH2' to 'R3_DMSO_IgG'."
+    },
+    {
+      "category": "naming_inconsistency",
+      "severity": "error",
+      "columns": [
+        "source name",
+        "characteristics[antibody]"
+      ],
+      "rows": [
+        10
+      ],
+      "evidence": "Row 10 source name 'R3_DMSO_EZH2' but characteristics[antibody] = 'IgG' and factor value[antibody] = 'IgG'; all other rows' source name suffix matches the antibody.",
+      "explanation": "The source name suggests an EZH2 sample whereas the antibody columns say IgG. The naming pattern across the other 11 rows shows the suffix should be IgG.",
+      "suggested_fix": "Change the source name of row 10 to 'R3_DMSO_IgG'."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule: \"4 channel(s) not assigned to a sample: TMT132C, TMT133N, TMT133C, TMT134N.\" Description: \"Four channels are unused.\"",
+      "explanation": "12 samples are in a 16-plex TMTpro kit, leaving 4 channels empty, which matches the description (12 samples, four unused channels). The empty channels are expected and have no analysis impact beyond lower multiplexing, though they should not be quantified as samples.",
+      "suggested_fix": "No change needed; optionally note in the project documentation that TMT132C, TMT133N, TMT133C and TMT134N were intentionally left empty."
+    }
+  ],
+  "summary": "The SDRF otherwise matches the description (RL cells, CPI-169 vs DMSO, EZH2 vs IgG, 12 samples, TMTpro 16-plex, trypsin). Main problem: row 10 duplicates the source name 'R3_DMSO_EZH2' although it is the IgG sample (should be R3_DMSO_IgG). The four unused channels are consistent with the description."
+}

@@ -1,0 +1,29 @@
+{
+  "findings": [
+    {
+      "category": "rule_issue_explanation",
+      "severity": "error",
+      "columns": [
+        "comment[precursor mass tolerance]"
+      ],
+      "rows": [
+        6
+      ],
+      "evidence": "Rule: 'comment[precursor mass tolerance]' has 2 different values within EZH2_IgG_CPI169_TMTpro16.raw. Row 6 (R2_DMSO_IgG) is 20 ppm; the other 11 rows are 10 ppm.",
+      "explanation": "All 12 samples were multiplexed into one TMT run and one raw file, so they were searched with a single precursor tolerance. Two different values within the same file cannot be correct. The 20 ppm value in row 6 is the outlier and is most likely a typo or copy-paste error. If it is used as written, the search settings are ambiguous, and one sample could be handled differently from the rest.",
+      "suggested_fix": "Set row 6 to the tolerance actually used in the search. This is most likely 10 ppm, matching the other 11 rows, so that every row of the run has the same value."
+    },
+    {
+      "category": "rule_issue_explanation",
+      "severity": "warning",
+      "columns": [
+        "comment[label]"
+      ],
+      "rows": [],
+      "evidence": "Rule: 4 channel(s) not assigned to a sample: TMT132C, TMT133N, TMT133C, TMT134N. The description says: 'Four channels are unused.'",
+      "explanation": "The TMTpro 16-plex kit has 16 channels and only 12 samples are labelled. The four unassigned channels match the description, so this is expected and is not a metadata error. The channels are empty, so they should not enter quantification or normalisation as samples. If they were not truly empty, for example because of reagent carry-over, they would add signal that is not accounted for.",
+      "suggested_fix": "No change to the SDRF is needed. Confirm that these four channels were left empty and exclude them in the quantification software."
+    }
+  ],
+  "summary": "The SDRF matches the description for organism, cell line, treatments, antibodies, sample number (12), trypsin and TMTpro 16-plex. Two rule issues are explained. One is an error: row 6 has a precursor mass tolerance of 20 ppm while all other rows have 10 ppm. The other is a warning: the four unused channels agree with the description."
+}
