@@ -200,8 +200,6 @@ nextflow run bigbio/quantms -r 1.10.0 -profile test_tmt,docker \
 
 ## Next steps
 
-- Apply to the thesis data once available, starting with the sensitivity
-  analysis for the low-input channel proposed in the thesis.
 - Detection-strength curves (vary the size of planted problems).
 - An automatic check that every number quoted in an LLM report appears in the
   metrics.
