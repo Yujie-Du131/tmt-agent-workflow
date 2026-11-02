@@ -187,7 +187,6 @@ nextflow run bigbio/quantms -r 1.10.0 -profile test_tmt,docker \
 
 ## Limitations
 
-- Not yet applied to my own MS data.
 - Benchmarks are small and were designed by the same person who built the
   system; two prompt rules were added after pilot runs, so the final runs are
   not fully held out.
