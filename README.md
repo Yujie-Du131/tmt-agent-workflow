@@ -1,0 +1,211 @@
+# tmt-agent-workflow
+
+LLM-assisted checks around a quantms/Nextflow TMT proteomics workflow: metadata
+validation before a run, contrast drafting for the analyst to confirm, and QC
+reports written from computed metrics (not plots) after a run.
+
+Deterministic code does everything that can be counted or matched. The LLM is
+used only where code cannot help: comparing metadata with the researcher's
+free-text description of the experiment, explaining problems, and turning QC
+metrics into a report with likely causes and checks. Every LLM output is a
+draft for the analyst to confirm.
+
+## Status: what was tested on what
+
+The framework was designed for my MSc thesis experiment (EZH2 proximity
+proteomics in RL cells, below). The mass spectrometry data for that experiment
+were not available, so **no component has been run on my own MS data**.
+
+| Component | Tested on |
+|---|---|
+| Pre-run SDRF checks | SDRF of my own experimental design, and 16 deliberately corrupted copies |
+| Contrast drafting | My own experimental design |
+| Post-run QC report | Simulated intensities with planted problems; real quantms output for the public dataset PXD000001 |
+
+## The experiment the framework was designed for
+
+RL cells (diffuse large B-cell lymphoma) were grown as six independent
+cultures, three treated with the EZH2 inhibitor CPI-169 and three with DMSO.
+From each culture, one aliquot was labelled by antibody-guided proximity
+labelling (pA-APEX2) with an anti-EZH2 antibody and one with an IgG control,
+giving 12 samples in one TMT run. The primary comparison is the
+antibody-by-treatment interaction: how CPI-169 changes labelling with EZH2
+relative to IgG.
+
+This is a split-plot design. Treatment varies between cultures (n = 3 per
+group); antibody varies within cultures. The interaction is a within-culture
+contrast, so culture-to-culture variation cancels; the simple treatment
+effects are between-culture contrasts.
+
+Run-level SDRF values (TMTpro 16-plex, instrument, fractionation,
+modifications, channel layout) are **assumptions** pending confirmation with
+the mass spectrometry facility; see `src/tmt_agents/sdrf_io.py`.
+
+## Components
+
+### 1. Pre-run metadata checks
+
+- `sdrf_io.py`: builds an SDRF from a simple sample sheet. The generated SDRF
+  passes the official `sdrf-pipelines` validator (templates `ms-proteomics`
+  and `cell-lines`).
+- `rules.py`: deterministic checks against an expected design (`design.json`):
+  unique channels and sample names, labels within the plex, factor levels,
+  balance, run-level consistency and, for paired designs, that every culture
+  has one sample per antibody.
+- `design_check.py` (LLM): drafts `design.json` from a free-text description,
+  compares the SDRF with the description, and explains rule-check results.
+
+**Benchmark** (`examples/benchmark/`): 1 clean SDRF and 16 single-error
+corruptions; LLM run 3 times per file.
+
+| Category | Example | sdrf-pipelines | rules.py | rules + LLM |
+|---|---|---|---|---|
+| A: counting/structure (9) | duplicate channel, missing sample, broken pairing | 1/9 | 9/9 | 9/9 |
+| B: consistent but contradicts the description (6) | wrong cell line, enzyme, TMT reagent; treatment labels of two cultures swapped | 0/6 | 0/6 | 6/6 (3/3 runs each) |
+| C: undetectable from the description (1) | two channels swapped | 0/1 | 0/1 | 0/1 |
+| Clean SDRF | | no error | no error | no findings in 3/3 runs |
+
+`sdrf-pipelines` checks format and ontology terms, not experimental design,
+so the comparison shows a division of labour, not a better validator. All 10
+LLM findings outside the corrupted column were reviewed by hand and were
+correct (`examples/benchmark/manual_review.md`). After a pilot run, one rule
+was added to the prompt to stop comments on formatting conventions.
+
+### 2. Contrast drafting
+
+`contrasts.py` builds a cell-means design matrix, the four simple effects and
+the interaction, and classifies each contrast as within- or between-culture.
+Culture is a blocking factor (`duplicateCorrelation` in limma) rather than a
+fixed effect, because culture is nested in treatment. The LLM proposes which
+contrast is primary and which levels are references; code checks the proposal
+against `design.json`. Output: `examples/contrasts/`. The generated limma code
+has not been run on data.
+
+### 3. Post-run QC on simulated data
+
+`qc_simulate.py` simulates protein intensities for the 2 x 2 split-plot design
+with one planted problem per scenario; `qc_metrics.py` computes channel
+metrics, including a paired-ratio slope for each culture (log2 EZH2/IgG
+regressed on the other cultures), which drops under ratio compression and
+turns negative when the two channels of a culture are swapped. The LLM writes
+the report from the metrics alone (`qc_report.py`).
+
+| Scenario | Threshold baseline | LLM (3 runs) |
+|---|---|---|
+| Clean | nothing flagged | no issues 3/3 |
+| Low loading, ratio compression, outlier, label swap | channel flagged (no issue type) | correct type and channel 3/3 each |
+| Lower loading in all CPI-169 channels | missed (no single outlier) | 3/3 |
+
+The planted problems in four scenarios are large; ratio compression and the
+treatment-wide loading shift are the informative cases. On review, all three
+compression reports stated the direction of bias on the primary contrast
+(towards an apparent loss of EZH2-proximal proteins); two of three contained
+an incorrect secondary statement about mechanism
+(`examples/qc/manual_review.md`). One prompt rule was added after a pilot run.
+
+### 4. Real quantms output (PXD000001)
+
+quantms 1.10.0 (`test_tmt` profile) was run on PXD000001, a TMT6plex dataset
+with four proteins spiked at known amounts into a bacterial background.
+`quantms_qc.py` reads the MSstats input table and computes channel metrics and
+spike-in ratio recovery.
+
+- **QC found two nearly empty channels.** Channels 2 and 4 (TMT127, TMT129)
+  had 1 and 4 of 468 proteins quantified (robust z of median -34 and -27).
+- **Diagnosis.** The default reporter-ion extraction tolerance (0.002 Th) was
+  used. The pipeline option `--reporter_mass_shift` was recorded in the run
+  parameters but not passed to the OpenMS `IsobaricWorkflow` step. Passing
+  the option through `ext.args` (`configs/`) with 0.01 Th recovered both
+  channels (459-463 proteins in all channels). The pattern is consistent with
+  older TMT6 reagents whose 127/129 reporter masses differ slightly from the
+  expected values; the reagent masses were not checked against a primary
+  source.
+- **Ratio compression.** Pooled spike-in slope 0.78 (1 = full recovery): a
+  true 10-fold difference was measured as about 6-fold. Isotope correction was
+  off in this run.
+
+Full record: `examples/quantms_pxd000001_investigation.md`.
+
+**Blind LLM report** (`examples/real_qc_reports/`): the LLM received the
+metrics, SDRF, pipeline parameters and the quantification command, without
+being told what was wrong. Before the fix, 3/3 runs reported ch2 and ch4,
+mapped them to TMT127/TMT129 and ranked reporter-ion extraction tolerance
+first. After the fix (control), 3/3 runs reported only ratio compression; one
+also noticed the mismatch between the recorded parameter and the command.
+Weaknesses found on review: two runs proposed a global calibration offset,
+which cannot explain a failure of two channels only, and no run proposed the
+reagent explanation. The prompt was written after the diagnosis, and the
+dataset is widely discussed, so prior knowledge cannot be ruled out.
+
+## Repository layout
+
+```
+src/tmt_agents/   sdrf_io, rules, design_check, corruptions, benchmark,
+                  contrasts, qc_simulate, qc_metrics, qc_report,
+                  quantms_qc, run_qc_report
+scripts/          command-line entry points (one per step)
+data/             own_design/, corrupted_sdrf/, simulated_qc/, quantms_pxd000001/
+examples/         outputs, benchmark results and manual reviews
+configs/          Nextflow config used for the fixed quantms run
+tests/            82 tests; none calls the API
+```
+
+## Reproduce
+
+Requires [uv](https://docs.astral.sh/uv/). LLM steps need an Anthropic API key
+in `.env` (`ANTHROPIC_API_KEY=...`); the model can be set with
+`TMT_AGENTS_MODEL` (results here: `claude-sonnet-5-5`).
+
+```bash
+uv sync
+uv run pytest -q
+
+# 1. Pre-run checks
+uv run python scripts/make_own_sdrf.py
+uv run python scripts/check_sdrf.py data/own_design/sdrf.tsv data/own_design/design.json
+uv run parse_sdrf validate-sdrf -s data/own_design/sdrf.tsv -t ms-proteomics -t cell-lines --use_ols_cache_only
+uv run python scripts/review_sdrf.py data/own_design examples/own_design_review.md
+uv run python scripts/run_benchmark.py            # add --no-llm to skip API calls
+
+# 2. Contrasts
+uv run python scripts/make_contrasts.py data/own_design examples/contrasts
+
+# 3. QC on simulated data
+uv run python scripts/run_qc_benchmark.py         # add --no-llm to skip API calls
+
+# 4. QC on real quantms output
+uv run python scripts/check_quantms_output.py data/quantms_pxd000001/msstats_in_shift0.01.csv.gz examples/quantms_pxd000001_shift0.01
+uv run python scripts/run_real_qc_report.py data/quantms_pxd000001 shift0.002 examples/real_qc_reports --runs 3
+```
+
+The quantms run itself (Nextflow, Docker; about 25 min on 2 vCPU / 8 GB):
+
+```bash
+nextflow run bigbio/quantms -r 1.10.0 -profile test_tmt,docker \
+  -c configs/quantms_reporter_shift_0.01.config --outdir results
+```
+
+## Limitations
+
+- Not yet applied to my own MS data.
+- Benchmarks are small and were designed by the same person who built the
+  system; two prompt rules were added after pilot runs, so the final runs are
+  not fully held out.
+- LLM outputs vary between runs; each benchmark used 3 runs. Classifications
+  and main impact statements were reliable; secondary mechanistic statements
+  were not always correct.
+- Contrast drafting supports 2 x 2 designs with one within-unit factor.
+- quantms 1.10.0 also writes results in the qpx format; only the MSstats
+  input table is read.
+
+## Next steps
+
+- Apply to the thesis data once available, starting with the sensitivity
+  analysis for the low-input channel proposed in the thesis.
+- Detection-strength curves (vary the size of planted problems).
+- An automatic check that every number quoted in an LLM report appears in the
+  metrics.
+- Report the parameter-passing issue to quantms.
+
+Developed with the help of an AI coding assistant (Claude). All runs,
+benchmarks and manual reviews were carried out and checked by the author.
