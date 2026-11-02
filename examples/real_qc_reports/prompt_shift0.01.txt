@@ -1,0 +1,256 @@
+Channel metrics (computed on non-spiked background proteins; channels ch1..chN follow the order of comment[label] in the SDRF):
+     n_quantified  raw_median  raw_median_z  corr_to_others
+ch1           460      20.750         1.300           0.999
+ch2           459      20.602        -0.235           0.995
+ch3           463      20.732         1.114           0.999
+ch4           461      20.605        -0.203           0.997
+ch5           463      20.451        -1.798           0.999
+ch6           463      20.644         0.203           0.999
+
+Definitions: n_quantified = proteins with a reporter intensity in the channel; raw_median = median log2 protein intensity; raw_median_z = robust z-score of raw_median across channels; corr_to_others = correlation with the mean of the other channels (NaN if too few proteins are quantified in all channels).
+
+Spike-in recovery (slope of measured on expected centred log2 values; 1 = full recovery; computed on the channels where the protein was quantified):
+accession              protein  psms  expected_range_log2  slope
+   P00924 sp|P00924|ENO1_YEAST    32                3.322  0.798
+   P02769 sp|P02769|ALBU_BOVIN    32                3.322  0.729
+   P00489 sp|P00489|PYGM_RABIT    52                1.000  0.753
+   P62894  sp|P62894|CYC_BOVIN     3                1.000  1.152
+
+SDRF:
+Columns with the same value in every row:
+- Characteristics[organism]: Dickeya chrysanthemi
+- Characteristics[organism part]: whole plant
+- Characteristics[age]: not available
+- Characteristics[ancestry category]: not available
+- Characteristics[developmental stage]: not available
+- Characteristics[cell line]: not applicable
+- Characteristics[cell type]: not available
+- Characteristics[sex]: not applicable
+- Characteristics[mass]: 1
+- Characteristics[disease]: not available
+- Characteristics[biological replicate]: 1
+- Material Type: cell
+- assay name: run 1
+- technology type: proteomic profiling by mass spectrometry
+- comment[data file]: TMT_Erwinia_1uLSike_Top10HCD_isol2_45stepped_60min_01.raw
+- comment[file uri]: https://ftp.pride.ebi.ac.uk/pride/data/archive/2012/03/PXD000001/TMT_Erwinia_1uLSike_Top10HCD_isol2_45stepped_60min_01.raw
+- comment[technical replicate]: 1
+- comment[fraction identifier]: 1
+- comment[instrument]: NT=LTQ Orbitrap Velos;AC=MS:1001742
+- comment[modification parameters]: NT=Oxidation;MT=Variable;TA=M;AC=Unimod:35
+- comment[modification parameters]: NT=Methylthio;TA=C;MT=fixed;AC=UNIMOD:39
+- comment[modification parameters]: NT=TMT6plex;TA=K;MT=Fixed;AC=UNIMOD:737
+- comment[modification parameters]: NT=TMT6plex;PP=Any N-term;MT=Fixed;AC=UNIMOD:737
+- comment[cleavage agent details]: AC=MS:1001313;NT=Trypsin
+- comment[dissociation method]: NT=HCD;AC=PRIDE:0000590
+- comment[precursor mass tolerance]: 25 ppm
+- comment[fragment mass tolerance]: 0.2 Da
+
+Columns that vary between rows (row numbers are 1-based):
+  Source Name      Characteristics[spiked compound]    Characteristics[spiked compound 2]  Characteristics[spiked compound 3]  Characteristics[spiked compound 4] comment[label]         Factor Value[spiked compound]         Factor Value[spiked compound]       Factor Value[spiked compound]       Factor Value[spiked compound]
+1    Sample 1   SP=Yeast;CT=protein;AC=P00924;QY=10    SP=BOVIN;CT=protein;AC=P02769;QY=1  SP=RABIT;CT=protein;AC=P00489;QY=2  SP=BOVIN;CT=protein;AC=P62894;QY=1         TMT126   SP=Yeast;CT=protein;AC=P00924;QY=10    SP=BOVIN;CT=protein;AC=P02769;QY=1  SP=RABIT;CT=protein;AC=P00489;QY=2  SP=BOVIN;CT=protein;AC=P62894;QY=1
+2    Sample 2    SP=Yeast;CT=protein;AC=P00924;QY=5  SP=BOVIN;CT=protein;AC=P02769;QY=2.5  SP=RABIT;CT=protein;AC=P00489;QY=2  SP=BOVIN;CT=protein;AC=P62894;QY=1         TMT127    SP=Yeast;CT=protein;AC=P00924;QY=5  SP=BOVIN;CT=protein;AC=P02769;QY=2.5  SP=RABIT;CT=protein;AC=P00489;QY=2  SP=BOVIN;CT=protein;AC=P62894;QY=1
+3    Sample 3  SP=Yeast;CT=protein;AC=P00924;QY=2.5    SP=BOVIN;CT=protein;AC=P02769;QY=5  SP=RABIT;CT=protein;AC=P00489;QY=2  SP=BOVIN;CT=protein;AC=P62894;QY=1         TMT128  SP=Yeast;CT=protein;AC=P00924;QY=2.5    SP=BOVIN;CT=protein;AC=P02769;QY=5  SP=RABIT;CT=protein;AC=P00489;QY=2  SP=BOVIN;CT=protein;AC=P62894;QY=1
+4    Sample 4    SP=Yeast;CT=protein;AC=P00924;QY=1   SP=BOVIN;CT=protein;AC=P02769;QY=10  SP=RABIT;CT=protein;AC=P00489;QY=2  SP=BOVIN;CT=protein;AC=P62894;QY=1         TMT129    SP=Yeast;CT=protein;AC=P00924;QY=1   SP=BOVIN;CT=protein;AC=P02769;QY=10  SP=RABIT;CT=protein;AC=P00489;QY=2  SP=BOVIN;CT=protein;AC=P62894;QY=1
+5    Sample 5  SP=Yeast;CT=protein;AC=P00924;QY=2.5    SP=BOVIN;CT=protein;AC=P02769;QY=5  SP=RABIT;CT=protein;AC=P00489;QY=1  SP=BOVIN;CT=protein;AC=P62894;QY=1         TMT130  SP=Yeast;CT=protein;AC=P00924;QY=2.5    SP=BOVIN;CT=protein;AC=P02769;QY=5  SP=RABIT;CT=protein;AC=P00489;QY=1  SP=BOVIN;CT=protein;AC=P62894;QY=1
+6    Sample 6   SP=Yeast;CT=protein;AC=P00924;QY=10    SP=BOVIN;CT=protein;AC=P02769;QY=1  SP=RABIT;CT=protein;AC=P00489;QY=1  SP=BOVIN;CT=protein;AC=P62894;QY=2         TMT131   SP=Yeast;CT=protein;AC=P00924;QY=10    SP=BOVIN;CT=protein;AC=P02769;QY=1  SP=RABIT;CT=protein;AC=P00489;QY=1  SP=BOVIN;CT=protein;AC=P62894;QY=2
+
+Pipeline parameters (JSON):
+{
+ "outdir": "results_ext0.01",
+ "root_folder": "/home/ubuntu/pxd000001",
+ "local_input_type": "raw",
+ "database": "https://raw.githubusercontent.com/bigbio/quantms-test-datasets/quantms/testdata/tmt_ci/erwinia_carotovora.fasta",
+ "id_only": false,
+ "input": "https://raw.githubusercontent.com/bigbio/quantms-test-datasets/quantms/testdata/tmt_ci/PXD000001.sdrf.tsv",
+ "validate_ontologies": true,
+ "skip_ms_validation": false,
+ "skip_factor_validation": true,
+ "skip_experimental_design_validation": false,
+ "use_ols_cache_only": true,
+ "add_decoys": true,
+ "skip_rescoring": false,
+ "search_engines": "comet,msgf",
+ "sage_processes": 1,
+ "run_fdr_cutoff": 0.1,
+ "protein_level_fdr_cutoff": 0.01,
+ "psm_level_fdr_cutoff": 1.0,
+ "fdr_conservative": true,
+ "psm_clean": false,
+ "decoydatabase_debug": 0,
+ "pp_debug": 0,
+ "iso_debug": 0,
+ "db_debug": 0,
+ "percolator_debug": 0,
+ "onsite_debug": 0,
+ "protein_inference_debug": 0,
+ "plfq_debug": 0,
+ "protein_quant_debug": 0,
+ "decoy_string": "rev",
+ "decoy_string_position": "prefix",
+ "decoy_method": "reverse",
+ "shuffle_max_attempts": 30,
+ "shuffle_sequence_identity_threshold": 0.5,
+ "openms_peakpicking": false,
+ "peakpicking_inmemory": false,
+ "peakpicking_ms_levels": null,
+ "reindex_mzml": true,
+ "mzml_statistics": false,
+ "mzml_features": false,
+ "isotope_correction": false,
+ "plex_corr_matrix_file": null,
+ "reference_channel": "126",
+ "min_precursor_intensity": 1.0,
+ "reporter_mass_shift": 0.002,
+ "quant_activation_method": "HCD",
+ "iso_normalization": false,
+ "min_reporter_intensity": 0.0,
+ "min_precursor_purity": 0.0,
+ "precursor_isotope_deviation": 10.0,
+ "met_excision": true,
+ "num_enzyme_termini": "fully",
+ "allowed_missed_cleavages": 2,
+ "precursor_mass_tolerance": 5,
+ "precursor_mass_tolerance_unit": "ppm",
+ "variable_mods": "Oxidation (M)",
+ "enable_mod_localization": false,
+ "fragment_mass_tolerance": 0.03,
+ "fragment_mass_tolerance_unit": "Da",
+ "ms2_fragment_method": "HCD",
+ "isotope_error_range": "0,1",
+ "instrument": null,
+ "protocol": "TMT",
+ "min_precursor_charge": 2,
+ "max_precursor_charge": 4,
+ "min_peptide_length": 6,
+ "max_peptide_length": 40,
+ "num_hits": 1,
+ "max_mods": 3,
+ "min_peaks": 10,
+ "ms2features_enable": false,
+ "ms2features_model_dir": null,
+ "ms2features_model": "generic",
+ "ms2features_generators": "deeplc,alphapeptdeep",
+ "ms2features_calibration": 0.15,
+ "ms2features_tolerance": 0.05,
+ "ms2features_tolerance_unit": "Da",
+ "ms2features_best": true,
+ "ms2features_force": false,
+ "ms2features_modloss": false,
+ "ms2features_snr": false,
+ "ms2features_fine_tuning": false,
+ "fine_tuning_sample_run": 1,
+ "force_transfer_learning": false,
+ "epoch_to_train_ms2": 20,
+ "transfer_learning_test_ratio": 0.3,
+ "ms2features_debug": false,
+ "IL_equivalent": true,
+ "unmatched_action": "warn",
+ "export_decoy_psm": true,
+ "train_FDR": 0.05,
+ "test_FDR": 0.05,
+ "fdr_level": "psm_level_fdrs",
+ "klammer": false,
+ "description_correct_features": 0,
+ "subset_max_train": 300000,
+ "best_per_spectrum_only": true,
+ "onsite_algorithm": "lucxor",
+ "onsite_fragment_method": "CID",
+ "onsite_rt_tolerance": 0.01,
+ "onsite_fragment_tolerance": 0.5,
+ "onsite_modeling_score_threshold": 0.95,
+ "onsite_scoring_threshold": 0.0,
+ "onsite_fragment_error_units": "Da",
+ "onsite_add_decoys": false,
+ "onsite_neutral_losses": null,
+ "onsite_decoy_mass": null,
+ "onsite_decoy_neutral_losses": null,
+ "onsite_threads": 1,
+ "onsite_target_modifications": null,
+ "onsite_min_num_psms_model": 5,
+ "onsite_disable_split_by_charge": false,
+ "onsite_compute_all_scores": false,
+ "onsite_min_mz": 150.0,
+ "onsite_max_num_perm": 16384,
+ "top_PSMs": 1,
+ "update_PSM_probabilities": false,
+ "picked_fdr": true,
+ "protein_score": "best",
+ "min_peptides_per_protein": 1,
+ "use_shared_peptides": true,
+ "top": 3,
+ "average": "median",
+ "best_charge_and_fraction": false,
+ "normalize": false,
+ "ratios": false,
+ "fix_peptides": false,
+ "include_all": true,
+ "accession": null,
+ "protein_inference_method": "aggregation",
+ "protein_quant": "unique_peptides",
+ "quantification_method": "feature_intensity",
+ "lfq_seeding_algorithm": "biosaur2",
+ "mass_recalibration": false,
+ "alignment_order": "star",
+ "quantify_decoys": false,
+ "targeted_only": true,
+ "feature_with_id_min_score": 0.1,
+ "feature_without_id_min_score": 0.75,
+ "lfq_intensity_threshold": 1000,
+ "convert_dotd": false,
+ "enable_pmultiqc": true,
+ "pmultiqc_idxml_skip": true,
+ "contaminant_string": "CONT",
+ "multiqc_config": null,
+ "multiqc_title": null,
+ "multiqc_logo": null,
+ "skip_table_plots": false,
+ "max_multiqc_email_size": "25.MB",
+ "multiqc_methods_description": null,
+ "publish_dir_mode": "copy",
+ "email": null,
+ "email_on_fail": null,
+ "plaintext_email": false,
+ "monochrome_logs": false,
+ "help": false,
+ "help_full": false,
+ "show_hidden": false,
+ "version": false,
+ "pipelines_testdata_base_path": "https://raw.githubusercontent.com/bigbio/quantms-test-datasets/",
+ "trace_report_suffix": "2026-11-02_16-57-57",
+ "config_profile_name": "Full test profile DDA ISO",
+ "config_profile_description": "Full test dataset in isotopic labelling mode to check pipeline function and sanity of results",
+ "custom_config_version": "master",
+ "custom_config_base": "https://raw.githubusercontent.com/nf-core/configs/master",
+ "config_profile_contact": null,
+ "config_profile_url": null,
+ "validate_params": true
+}
+
+Command of the quantification step:
+#!/usr/bin/env bash -C -e -u -o pipefail
+IsobaricWorkflow \
+    -threads 2 \
+    -in TMT_Erwinia_1uLSike_Top10HCD_isol2_45stepped_60min_01.mzML \
+    -in_id TMT_Erwinia_1uLSike_Top10HCD_isol2_45stepped_60min_01_clean_perc.idparquet \
+    -exp_design PXD000001.sdrf_openms_design.tsv \
+    -type tmt6plex \
+    -inference_method aggregation \
+    -protein_quantification unique_peptides \
+    -psmFDR 1.0 \
+    -proteinFDR 0.01 \
+    -picked_fdr true \
+    -picked_decoy_string rev \
+    -extraction:min_precursor_purity 0.0 \
+    -extraction:precursor_isotope_deviation 10.0 \
+    -extraction:min_reporter_intensity 0.0 \
+     \
+    -out PXD000001.sdrf_openms_design_openms.consensusXML \
+    -out_mzTab PXD000001.sdrf_openms_design_openms.mzTab \
+    -out_qpx PXD000001.sdrf_openms_design_qpx \
+    -extraction:reporter_mass_shift 0.01 \
+    2>&1 | tee isobaricworkflow.log
+cat <<-END_VERSIONS > versions.yml
+"BIGBIO_QUANTMS:QUANTMS:TMT:ISOBARIC_WORKFLOW":
+    IsobaricWorkflow: $(IsobaricWorkflow 2>&1 | grep -E '^Version(.*)' | sed 's/Version: //g' | cut -d ' ' -f 1)
+END_VERSIONS

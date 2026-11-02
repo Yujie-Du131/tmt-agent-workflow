@@ -80,3 +80,9 @@ def test_channel_offset_is_removed_by_background_normalisation():
     resid = per_channel.assign(r=per_channel["measured_log2_centred"]
                                - COMPRESSION * per_channel["expected_log2_centred"])
     assert resid["r"].abs().max() < 0.1
+
+def test_empty_channel_is_kept():
+    ms = make_msstats()
+    ms.loc[ms["Channel"] == 2, "Intensity"] = 0
+    y = protein_matrix(ms)
+    assert "ch2" in y.columns and y["ch2"].isna().all()

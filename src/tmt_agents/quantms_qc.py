@@ -38,7 +38,11 @@ def protein_matrix(msstats: pd.DataFrame) -> pd.DataFrame:
     d = d[~d["ProteinName"].str.contains("DECOY", case=False)]
     d = d[~d["ProteinName"].str.contains(";")]
     wide = d.pivot_table(index="ProteinName", columns="Channel", values="Intensity", aggfunc="sum")
+    # keep channels with no quantified protein as all-NaN columns, so that an
+    # empty channel is reported rather than silently dropped
+    wide = wide.reindex(columns=sorted(msstats["Channel"].unique()))
     wide.columns = [f"ch{c}" for c in wide.columns]
+
     return np.log2(wide)
 
 
