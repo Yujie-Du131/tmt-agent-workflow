@@ -1,0 +1,54 @@
+[
+  {
+    "id": "Q00_clean",
+    "description": "No planted problem (false-positive control).",
+    "issue_type": null,
+    "samples": []
+  },
+  {
+    "id": "Q01_low_loading",
+    "description": "R2_CPI_EZH2 loaded about 2.3-fold lower (-1.2 log2).",
+    "issue_type": "low_loading",
+    "samples": [
+      "R2_CPI_EZH2"
+    ]
+  },
+  {
+    "id": "Q02_ratio_compression",
+    "description": "R2_CPI_EZH2 ratios compressed to 40% towards the mixture mean.",
+    "issue_type": "ratio_compression",
+    "samples": [
+      "R2_CPI_EZH2"
+    ]
+  },
+  {
+    "id": "Q03_outlier_sample",
+    "description": "R3_DMSO_IgG has extra noise (SD 0.8 log2).",
+    "issue_type": "outlier_sample",
+    "samples": [
+      "R3_DMSO_IgG"
+    ]
+  },
+  {
+    "id": "Q04_label_swap",
+    "description": "Data of R1_DMSO_EZH2 and R1_DMSO_IgG swapped (metadata unchanged).",
+    "issue_type": "label_swap",
+    "samples": [
+      "R1_DMSO_EZH2",
+      "R1_DMSO_IgG"
+    ]
+  },
+  {
+    "id": "Q05_treatment_loading",
+    "description": "All CPI-169 channels loaded lower (-0.6 log2).",
+    "issue_type": "loading_confounded_with_treatment",
+    "samples": [
+      "R1_CPI_EZH2",
+      "R1_CPI_IgG",
+      "R2_CPI_EZH2",
+      "R2_CPI_IgG",
+      "R3_CPI_EZH2",
+      "R3_CPI_IgG"
+    ]
+  }
+]

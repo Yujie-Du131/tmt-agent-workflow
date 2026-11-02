@@ -1,0 +1,20 @@
+{
+  "overall": "minor_issues",
+  "issues": [
+    {
+      "issue_type": "loading_confounded_with_treatment",
+      "samples": [
+        "R1_CPI_EZH2",
+        "R1_CPI_IgG",
+        "R2_CPI_EZH2",
+        "R2_CPI_IgG",
+        "R3_CPI_EZH2",
+        "R3_CPI_IgG"
+      ],
+      "evidence": "loading_by_level compound: DMSO 20.085 vs CPI-169 19.589 (difference 0.50 log2). The ranges do not overlap: DMSO raw_median 19.908-20.255 (raw_median_z +0.20 to +1.14), CPI-169 raw_median 19.424-19.759 (raw_median_z -1.11 to -0.20). n_quantified is also lower in all CPI-169 channels (1435-1440) than in all DMSO channels (1458-1472). The shift is the same in both antibodies: IgG 19.976 (DMSO) vs 19.473 (CPI-169), EZH2 20.195 vs 19.705. The antibody level difference is smaller (EZH2 19.95 vs IgG 19.725) and runs the same way in both treatments. pc_factor_association: PC2 (11.5% of variance) tracks compound at 0.972.",
+      "impact": "Treatment is a between-culture factor, so a loading difference cannot be separated from the drug effect in CPI169_vs_DMSO_in_IgG and CPI169_vs_DMSO_in_EZH2. These two contrasts are affected. Raw intensities and detection depth are lower in the CPI-169 cultures, which would push apparent protein changes toward lower abundance in CPI-169 and affect low-abundance proteins most through missing values. The shift is the same in EZH2 and IgG channels (about 0.50 and 0.49 log2), so it should largely cancel in the within-culture contrasts, including the primary interaction. The paired median_ratio values are similar in the two treatments (DMSO -0.117 to -0.147, CPI-169 -0.146 to -0.206), so I do not expect a large bias in the interaction.",
+      "recommendation": "Interpret the between-culture CPI-169 vs DMSO contrasts with caution and treat the interaction as the primary result. The metrics cannot say whether the shift reflects lower input, a real drug effect on labelling or biotinylation, or a technical difference. Check recorded protein input, streptavidin and bead yield per culture, and whether the intensity shift depends on protein abundance. Report the interaction with and without adjustment for channel loading to confirm it is robust."
+    }
+  ],
+  "summary": "Within-level variation is small. There are no outlier channels, no label-swap signal, and the paired ratios are consistent across all six cultures (ratio_iqr 0.544-0.609, slope_vs_other_cultures 0.932-0.955). PC1 separates antibody (0.999) and PC2 separates compound (0.972), as the design predicts. The one departure is a systematic 0.5 log2 lower raw intensity, with fewer quantified proteins, in all CPI-169 channels. This confounds treatment with loading in the between-culture contrasts. The within-culture contrasts, including the primary interaction, should be largely unaffected because the shift is equal in EZH2 and IgG channels."
+}

@@ -1,0 +1,15 @@
+{
+  "overall": "major_issues",
+  "issues": [
+    {
+      "issue_type": "outlier_sample",
+      "samples": [
+        "R3_DMSO_IgG"
+      ],
+      "evidence": "antibody_corr 0.844 (antibody_corr_z -23.86) versus 0.960-0.970 for all other channels (z between -1.4 and 0.7). pc1_z_within_antibody 18.922 (pc1 19.972 vs 9.99-11.16 for the other IgG channels). pc2 -23.219 vs -4.7 to 7.9 for all other channels. Its pair DMSO_3 has ratio_iqr 1.348 vs 0.538-0.602 in the other five cultures, and median_ratio -0.008 vs -0.127 to -0.173. n_quantified is 1436, the lowest but only modestly below the 1456-1473 range of the others. raw_median_z is -0.667, so overall loading is ordinary.",
+      "impact": "Only this IgG channel is affected, and the problem is in its IgG profile rather than in total signal. The within-culture contrasts that use DMSO_3 are affected: EZH2_vs_IgG_in_DMSO, whose DMSO_3 ratios are about 2.4 times noisier and shifted in median, and the interaction, which includes that DMSO ratio. The between-culture contrast CPI169_vs_DMSO_in_IgG is also affected because this channel is one of the three DMSO IgG replicates. CPI169_vs_DMSO_in_EZH2 and EZH2_vs_IgG_in_CPI169 do not use this channel. The metrics do not give a per-protein direction. The extra noise in the DMSO EZH2/IgG ratio inflates variance and lowers power for the interaction and for EZH2_vs_IgG_in_DMSO. It can also create spurious protein-level shifts in either direction. The shift in median_ratio of about +0.16 relative to the other cultures is a global offset that normalisation should remove, so the metrics do not show a bias in the interaction from it.",
+      "recommendation": "Treat R3_DMSO_IgG as a technical outlier. Rerun the primary contrasts with and without DMSO_3, and use a model with culture pairing and robust or precision weights. To identify the cause, check reporter-ion purity and isolation interference for this channel, compare its raw profile with the streptavidin-bead/IgG background of the other IgG channels, and check for a channel mix-up or an unrelated sample by checking whether its profile matches any other channel or unused channel. Metrics alone cannot separate failed or contaminated IgG labelling, an enrichment problem, and a mislabelled channel. If the cause cannot be determined, report the DMSO IgG-dependent contrasts as having n=2 cultures."
+    }
+  ],
+  "summary": "One channel, R3_DMSO_IgG, is a clear outlier: antibody_corr 0.844 (z -23.9), pc1_z_within_antibody 18.9, and a DMSO_3 paired ratio_iqr of 1.348 versus about 0.56 elsewhere. Its raw_median is normal, so this is not a low-loading problem. The affected contrasts are the within-culture EZH2_vs_IgG_in_DMSO and the interaction, plus the between-culture CPI169_vs_DMSO_in_IgG; the rest are unaffected. The other channels look consistent. Antibody separates on PC1 (association 0.98) and compound on PC3 (0.861). Loading differs by antibody (EZH2 20.23 vs IgG 20.009) but barely by compound (20.095 vs 20.144), so loading is not confounded with treatment. Paired-ratio slopes are uniform (0.865-0.96), so there is no culture-specific ratio compression."
+}

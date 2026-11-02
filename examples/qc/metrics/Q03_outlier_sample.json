@@ -1,0 +1,241 @@
+{
+ "n_proteins": 1500,
+ "n_proteins_complete": 1260,
+ "samples": [
+  {
+   "sample": "R1_DMSO_EZH2",
+   "group": "EZH2.DMSO",
+   "culture": "DMSO_1",
+   "n_quantified": 1467,
+   "raw_median": 20.279,
+   "raw_median_z": 0.993,
+   "antibody_corr": 0.97,
+   "antibody_corr_z": 0.466,
+   "pc1": -12.225,
+   "pc2": -2.333,
+   "pc1_z_within_antibody": -0.123
+  },
+  {
+   "sample": "R1_DMSO_IgG",
+   "group": "IgG.DMSO",
+   "culture": "DMSO_1",
+   "n_quantified": 1460,
+   "raw_median": 20.042,
+   "raw_median_z": -0.473,
+   "antibody_corr": 0.967,
+   "antibody_corr_z": -0.024,
+   "pc1": 10.905,
+   "pc2": 4.443,
+   "pc1_z_within_antibody": -0.074
+  },
+  {
+   "sample": "R1_CPI_EZH2",
+   "group": "EZH2.CPI169",
+   "culture": "CPI169_1",
+   "n_quantified": 1456,
+   "raw_median": 20.24,
+   "raw_median_z": 0.749,
+   "antibody_corr": 0.971,
+   "antibody_corr_z": 0.7,
+   "pc1": -11.737,
+   "pc2": -0.102,
+   "pc1_z_within_antibody": 0.978
+  },
+  {
+   "sample": "R1_CPI_IgG",
+   "group": "IgG.CPI169",
+   "culture": "CPI169_1",
+   "n_quantified": 1470,
+   "raw_median": 20.095,
+   "raw_median_z": -0.149,
+   "antibody_corr": 0.96,
+   "antibody_corr_z": -1.4,
+   "pc1": 11.163,
+   "pc2": 7.135,
+   "pc1_z_within_antibody": 0.465
+  },
+  {
+   "sample": "R2_DMSO_EZH2",
+   "group": "EZH2.DMSO",
+   "culture": "DMSO_2",
+   "n_quantified": 1473,
+   "raw_median": 20.191,
+   "raw_median_z": 0.449,
+   "antibody_corr": 0.969,
+   "antibody_corr_z": 0.284,
+   "pc1": -13.313,
+   "pc2": -1.978,
+   "pc1_z_within_antibody": -2.579
+  },
+  {
+   "sample": "R2_DMSO_IgG",
+   "group": "IgG.DMSO",
+   "culture": "DMSO_2",
+   "n_quantified": 1459,
+   "raw_median": 19.905,
+   "raw_median_z": -1.318,
+   "antibody_corr": 0.962,
+   "antibody_corr_z": -0.959,
+   "pc1": 9.991,
+   "pc2": 5.525,
+   "pc1_z_within_antibody": -1.989
+  },
+  {
+   "sample": "R2_CPI_EZH2",
+   "group": "EZH2.CPI169",
+   "culture": "CPI169_2",
+   "n_quantified": 1467,
+   "raw_median": 20.229,
+   "raw_median_z": 0.682,
+   "antibody_corr": 0.97,
+   "antibody_corr_z": 0.624,
+   "pc1": -12.116,
+   "pc2": -0.29,
+   "pc1_z_within_antibody": 0.123
+  },
+  {
+   "sample": "R2_CPI_IgG",
+   "group": "IgG.CPI169",
+   "culture": "CPI169_2",
+   "n_quantified": 1467,
+   "raw_median": 20.014,
+   "raw_median_z": -0.65,
+   "antibody_corr": 0.961,
+   "antibody_corr_z": -1.158,
+   "pc1": 10.976,
+   "pc2": 7.474,
+   "pc1_z_within_antibody": 0.074
+  },
+  {
+   "sample": "R3_DMSO_EZH2",
+   "group": "EZH2.DMSO",
+   "culture": "DMSO_3",
+   "n_quantified": 1468,
+   "raw_median": 20.143,
+   "raw_median_z": 0.149,
+   "antibody_corr": 0.97,
+   "antibody_corr_z": 0.649,
+   "pc1": -12.365,
+   "pc2": -4.654,
+   "pc1_z_within_antibody": -0.439
+  },
+  {
+   "sample": "R3_DMSO_IgG",
+   "group": "IgG.DMSO",
+   "culture": "DMSO_3",
+   "n_quantified": 1436,
+   "raw_median": 20.011,
+   "raw_median_z": -0.667,
+   "antibody_corr": 0.844,
+   "antibody_corr_z": -23.86,
+   "pc1": 19.972,
+   "pc2": -23.219,
+   "pc1_z_within_antibody": 18.922
+  },
+  {
+   "sample": "R3_CPI_EZH2",
+   "group": "EZH2.CPI169",
+   "culture": "CPI169_3",
+   "n_quantified": 1466,
+   "raw_median": 20.296,
+   "raw_median_z": 1.097,
+   "antibody_corr": 0.967,
+   "antibody_corr_z": 0.024,
+   "pc1": -11.768,
+   "pc2": 0.128,
+   "pc1_z_within_antibody": 0.91
+  },
+  {
+   "sample": "R3_CPI_IgG",
+   "group": "IgG.CPI169",
+   "culture": "CPI169_3",
+   "n_quantified": 1458,
+   "raw_median": 19.988,
+   "raw_median_z": -0.807,
+   "antibody_corr": 0.961,
+   "antibody_corr_z": -1.188,
+   "pc1": 10.519,
+   "pc2": 7.871,
+   "pc1_z_within_antibody": -0.884
+  }
+ ],
+ "pca_variance_explained": [
+  0.472,
+  0.198,
+  0.084
+ ],
+ "pc_factor_association": {
+  "PC1": {
+   "antibody": 0.98,
+   "compound": 0.04
+  },
+  "PC2": {
+   "antibody": 0.19,
+   "compound": 0.457
+  },
+  "PC3": {
+   "antibody": 0.055,
+   "compound": 0.861
+  }
+ },
+ "loading_by_level": {
+  "antibody": {
+   "EZH2": 20.23,
+   "IgG": 20.009
+  },
+  "compound": {
+   "DMSO": 20.095,
+   "CPI-169": 20.144
+  }
+ },
+ "paired_ratios": [
+  {
+   "culture": "CPI169_1",
+   "ezh2_sample": "R1_CPI_EZH2",
+   "igg_sample": "R1_CPI_IgG",
+   "median_ratio": -0.171,
+   "ratio_iqr": 0.562,
+   "slope_vs_other_cultures": 0.891
+  },
+  {
+   "culture": "CPI169_2",
+   "ezh2_sample": "R2_CPI_EZH2",
+   "igg_sample": "R2_CPI_IgG",
+   "median_ratio": -0.159,
+   "ratio_iqr": 0.563,
+   "slope_vs_other_cultures": 0.899
+  },
+  {
+   "culture": "CPI169_3",
+   "ezh2_sample": "R3_CPI_EZH2",
+   "igg_sample": "R3_CPI_IgG",
+   "median_ratio": -0.173,
+   "ratio_iqr": 0.538,
+   "slope_vs_other_cultures": 0.865
+  },
+  {
+   "culture": "DMSO_1",
+   "ezh2_sample": "R1_DMSO_EZH2",
+   "igg_sample": "R1_DMSO_IgG",
+   "median_ratio": -0.168,
+   "ratio_iqr": 0.594,
+   "slope_vs_other_cultures": 0.895
+  },
+  {
+   "culture": "DMSO_2",
+   "ezh2_sample": "R2_DMSO_EZH2",
+   "igg_sample": "R2_DMSO_IgG",
+   "median_ratio": -0.127,
+   "ratio_iqr": 0.602,
+   "slope_vs_other_cultures": 0.9
+  },
+  {
+   "culture": "DMSO_3",
+   "ezh2_sample": "R3_DMSO_EZH2",
+   "igg_sample": "R3_DMSO_IgG",
+   "median_ratio": -0.008,
+   "ratio_iqr": 1.348,
+   "slope_vs_other_cultures": 0.96
+  }
+ ]
+}

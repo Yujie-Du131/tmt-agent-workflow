@@ -1,0 +1,16 @@
+{
+  "overall": "major_issues",
+  "issues": [
+    {
+      "issue_type": "label_swap",
+      "samples": [
+        "R1_DMSO_EZH2",
+        "R1_DMSO_IgG"
+      ],
+      "evidence": "Both channels of culture DMSO_1 have very low antibody_corr (0.878, z=-18.66; 0.873, z=-19.868) against 0.961-0.970 for all other channels. PC1 is the antibody axis (antibody association 0.667), yet R1_DMSO_EZH2 has pc1=-11.948 (pc1_z_within_antibody=-23.366) and sits with the IgG channels (-11.6 to -12.9). R1_DMSO_IgG has pc1=+12.609 (z=31.144) and sits with the EZH2 channels (+11.4 to +13.4). The paired ratio for DMSO_1 has slope_vs_other_cultures=-0.935 and median_ratio=+0.146, against slopes of 1.375-1.491 and median ratios of -0.115 to -0.21 for the other five cultures. The raw_median values (EZH2 20.04, IgG 20.255) also run opposite to the other pairs, where EZH2 is higher. Together these show the two channels group with the opposite antibody, and the DMSO_1 EZH2/IgG ratio is inverted relative to the other cultures. Both channels have normal n_quantified (1467, 1472) and ordinary PC2 values.",
+      "impact": "Culture DMSO_1 contributes a sign-reversed EZH2-vs-IgG ratio. This affects the within-culture contrasts EZH2_vs_IgG_in_DMSO and the interaction. EZH2_vs_IgG_in_DMSO is shrunk toward zero (one of three pairs reversed), which inflates variance and reduces power. The interaction is the CPI169 ratio minus the DMSO ratio. Its bias is therefore upward for proteins enriched by EZH2 (apparent gain of EZH2 labelling under CPI-169 and loss of true depletion signal) and downward for IgG-enriched proteins. The between-culture contrasts CPI169_vs_DMSO_in_EZH2 and CPI169_vs_DMSO_in_IgG are also biased because each DMSO group contains one channel with the other antibody's profile. The two contrasts are biased in opposite directions, and the within-antibody variance is inflated. The CPI169 cultures and DMSO_2/DMSO_3 are consistent with each other.",
+      "recommendation": "Check the TMT channel assignment, sample sheet and pipetting or labelling records for DMSO_1 to confirm or exclude a swap. If a swap is confirmed, relabel the two channels and re-run normalisation and the contrasts. Otherwise, exclude both DMSO_1 channels, or the DMSO_1 pair, and refit with n=2 DMSO cultures, noting the loss of power. The metrics cannot distinguish a swap from two independently failed samples. A swap is more likely because the pattern is symmetric, and relabelling should give antibody_corr and a paired-ratio slope in line with the other cultures."
+    }
+  ],
+  "summary": "One major problem: the EZH2 and IgG channels of culture DMSO_1 appear to have swapped antibody identity. They have antibody_corr of about 0.87 (z about -19) against about 0.96-0.97 elsewhere, and their PC1 scores fall on the opposite antibody side. The DMSO_1 paired-ratio slope is -0.935 against 1.38-1.49 for the other cultures. This compromises the within-culture DMSO contrast and the interaction, and biases both between-culture contrasts. Other metrics (protein counts, raw medians, PC2 compound separation at 0.971, other cultures' ratio slopes) are consistent across channels. Correct or exclude this pair after checking the labelling records."
+}

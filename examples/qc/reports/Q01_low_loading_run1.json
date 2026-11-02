@@ -1,0 +1,15 @@
+{
+  "overall": "minor_issues",
+  "issues": [
+    {
+      "issue_type": "low_loading",
+      "samples": [
+        "R2_CPI_EZH2"
+      ],
+      "evidence": "raw_median 19.135 (raw_median_z -5.659), while all other channels lie between 19.908 and 20.332 (|z| <= 1.574). n_quantified 1397, versus 1458-1472 in the other 11 channels. After normalisation it looks ordinary: antibody_corr 0.968 (z 0.682), pc1_z_within_antibody 0.518, and PC1/PC2 scores in line with the other EZH2.CPI169 channels. Its partner R2_CPI_IgG is normal (raw_median 20.009, n_quantified 1465).",
+      "impact": "Only the CPI169_2 EZH2 channel is affected, so it concerns the contrasts that use it. These are EZH2_vs_IgG_in_CPI169 and the interaction (both within-culture, via the CPI169_2 pair) and CPI169_vs_DMSO_in_EZH2 (between-culture). The IgG-only contrast CPI169_vs_DMSO_in_IgG and EZH2_vs_IgG_in_DMSO are unaffected. The loading difference between compounds (DMSO 20.085 vs CPI-169 19.968) is driven by this one channel and is not a treatment-wide pattern. Because normalisation corrects most of the offset, the likely effect is extra noise and missing values in one of three CPI169 pairs. A shift in the CPI169 EZH2-vs-IgG ratio is possible but the metrics do not show it clearly. The CPI169_2 median_ratio is -0.26, against -0.149 and -0.204 for the other CPI169 cultures. If real signal was lost, EZH2 enrichment in CPI169 would be underestimated and the interaction pushed toward more negative values (apparent loss of EZH2 proximity under CPI-169). The metrics cannot confirm this direction. Culture 2 ratio_iqr (0.559) and slope (0.953) are similar to the other cultures, so there is no sign of ratio compression or excess noise in that pair.",
+      "recommendation": "Check whether the proteins missing from R2_CPI_EZH2 are low-abundance and whether the bait (EZH2) and known EZH2 interactors dropped out. This would separate a true loss of enrichment from a simple loading shortfall. Compare against streptavidin-enrichment or peptide-input records for that sample. Run a sensitivity analysis for the CPI169 contrasts and the interaction with and without CPI169_2, and report the effect of that culture. Flag proteins with missing values in this channel instead of imputing them."
+    }
+  ],
+  "summary": "Eleven of twelve channels are consistent. Raw intensities, protein counts, within-antibody correlations and PC scores are all in line, and the paired EZH2/IgG ratios are similar across cultures (IQR 0.546-0.620, slopes 0.929-0.953). PC1 separates antibody (0.999) and PC2 separates compound (0.968), as the design intends. The one exception is R2_CPI_EZH2, which has low loading (raw_median_z -5.659, 1397 proteins quantified). It weakens one of three CPI169 pairs and so reduces the precision of the within-culture CPI169 contrast and the interaction. A sensitivity analysis excluding culture 2 is recommended."
+}

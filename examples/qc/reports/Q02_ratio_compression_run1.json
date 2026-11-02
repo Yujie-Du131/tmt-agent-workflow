@@ -1,0 +1,15 @@
+{
+  "overall": "major_issues",
+  "issues": [
+    {
+      "issue_type": "ratio_compression",
+      "samples": [
+        "R2_CPI_EZH2"
+      ],
+      "evidence": "R2_CPI_EZH2 has pc1 = -5.051 and pc1_z_within_antibody = 5.906, while the other EZH2 channels have pc1 between -14.247 and -11.848 (z between -1.116 and 0.716). Its antibody_corr = 0.984 (antibody_corr_z = 5.273) is above all other channels (0.966-0.972). For culture CPI169_2, slope_vs_other_cultures = 0.676 and ratio_iqr = 0.467, against slopes of 0.978-1.012 and IQRs of 0.544-0.606 in the other five cultures. Its raw_median (20.151, z = 0.223) and n_quantified (1466) are ordinary, so loading is not the problem.",
+      "impact": "The EZH2 channel looks more like the IgG channels than the other EZH2 channels, so the EZH2-vs-IgG enrichment in culture CPI169_2 is compressed. This affects the within-culture contrasts EZH2_vs_IgG_in_CPI169 and the interaction, which uses that contrast. The between-culture contrast CPI169_vs_DMSO_in_EZH2 is also affected, because it uses this EZH2 channel. The IgG channel R2_CPI_IgG is unremarkable (antibody_corr_z = -0.599, pc1_z_within_antibody = 1.026). Because enrichment in CPI169_2 is weakened, the EZH2-vs-IgG effect under CPI-169 is biased toward zero, which would make EZH2 labelling look weaker under CPI-169 and bias the interaction (CPI-169 minus DMSO) toward a negative value for enriched proteins. The same compression would reduce the apparent CPI-169 vs DMSO change in the EZH2 channels for these proteins.",
+      "recommendation": "The metrics cannot distinguish weak EZH2 labelling or enrichment in this aliquot from cross-contamination or carry-over from another channel (TMT reporter ratio compression or interference), or from a mix-up with an IgG-like sample. Check the unused-channel signal and the reporter isotope purity corrections, and whether the sample was recorded as processed with the others. Check the bait (EZH2) and known core PRC2 interactors in this channel, since they should be enriched if the labelling worked. Run a sensitivity analysis of the interaction with culture CPI169_2 excluded (n = 2 CPI-169 cultures), and consider re-running or re-labelling this culture if material is available."
+    }
+  ],
+  "summary": "Overall the data are of good quality. Protein counts (1458-1472 per channel) and raw medians (z between -1.246 and 1.317) are uniform. PC1 separates the antibody (association 0.982), and PC2 separates treatment (association 0.935) with no pattern of loading confounded with the treatment (compound means 20.085 vs 20.137). One channel stands out: R2_CPI_EZH2 is atypically close to the IgG channels (pc1_z_within_antibody = 5.906, antibody_corr_z = 5.273). Its culture's paired ratio is compressed (slope 0.676 vs about 1.0 elsewhere). This weakens the enrichment in culture CPI169_2 and threatens the CPI-169 within-culture contrast and the interaction. The cause cannot be determined from the metrics, so the further checks above are needed."
+}

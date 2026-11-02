@@ -1,0 +1,20 @@
+{
+  "overall": "minor_issues",
+  "issues": [
+    {
+      "issue_type": "loading_confounded_with_treatment",
+      "samples": [
+        "R1_CPI_EZH2",
+        "R1_CPI_IgG",
+        "R2_CPI_EZH2",
+        "R2_CPI_IgG",
+        "R3_CPI_EZH2",
+        "R3_CPI_IgG"
+      ],
+      "evidence": "loading_by_level compound: DMSO 19.589 vs CPI-169 ... actually DMSO 20.085 vs CPI-169 19.589 (about 0.5 log2 lower). Every CPI-169 channel has a negative raw_median_z (-0.202 to -1.112) and every DMSO channel a positive one (0.202 to 1.144), so the two levels do not overlap. n_quantified is also lower in all CPI-169 channels (1435-1440) than in all DMSO channels (1458-1472). PC2 (11.5% of variance) tracks compound (association 0.972). The antibody difference in loading is smaller (EZH2 19.95 vs IgG 19.725) and is expected for an enrichment.",
+      "impact": "The shift is shared by all channels of one treatment level, so it is fully confounded with treatment. It affects the between-culture contrasts CPI169_vs_DMSO_in_IgG and CPI169_vs_DMSO_in_EZH2, which are already the least powered because they compare independent cultures. The within-culture contrasts (EZH2_vs_IgG in each treatment, and the interaction) are largely protected, because the EZH2 and IgG samples of a culture share the treatment and both sit lower under CPI-169. The within-culture EZH2-IgG loading differences are similar across strata (DMSO 0.145-0.296, CPI-169 0.121-0.335). The metrics cannot show whether the lower CPI-169 intensity is a real treatment effect or a technical difference in cell input, biotinylation or pulldown efficiency. If it is technical, the between-culture contrasts would likely be biased toward apparent decreases under CPI-169 for low-abundance proteins near the detection limit, because of reduced detection and ratio compression. After median normalisation the global offset is removed, so the effect on the bulk of proteins is probably small.",
+      "recommendation": "Check the pre-labelling protein or peptide yields, streptavidin pulldown recovery and cell counts for the CPI-169 and DMSO aliquots to see whether the difference is technical or biological. Check whether CPI169_vs_DMSO log fold changes depend on protein intensity. Treat between-culture contrasts cautiously and give priority to the within-culture interaction, which is the primary contrast."
+    }
+  ],
+  "summary": "The dataset is generally good. Antibody separates cleanly on PC1 (association 0.999, 54.8% of variance). Within-antibody agreement is tight (antibody_corr 0.964-0.970, no |z| above 1.4), and there are no outlier channels or label swaps. Paired EZH2/IgG ratios are consistent across all six cultures (median_ratio -0.117 to -0.206, ratio_iqr 0.544-0.609, slope 0.932-0.955), so there is no ratio compression specific to any culture. The one pattern worth noting is a systematic ~0.5 log2 lower raw intensity in all CPI-169 channels, which is confounded with treatment. It mainly threatens the between-culture CPI169_vs_DMSO contrasts and should have little effect on the within-culture interaction."
+}
