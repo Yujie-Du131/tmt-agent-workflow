@@ -7,5 +7,9 @@
   },
   "replicates_per_condition": 3,
   "culture_defined_by": ["compound", "biological replicate"],
-  "within_culture_factor": "antibody"
+  "within_culture_factor": "antibody",
+  "reference_levels": {
+    "compound": "DMSO",
+    "antibody": "IgG"
+  }
 }

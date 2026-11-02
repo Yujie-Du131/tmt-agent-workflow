@@ -1,0 +1,5 @@
+,EZH2_vs_IgG_in_DMSO,EZH2_vs_IgG_in_CPI169,CPI169_vs_DMSO_in_IgG,CPI169_vs_DMSO_in_EZH2,interaction
+EZH2.DMSO,1,0,0,-1,-1
+EZH2.CPI169,0,1,0,1,1
+IgG.DMSO,-1,0,-1,0,1
+IgG.CPI169,0,-1,1,0,-1
