@@ -13,8 +13,7 @@ draft for the analyst to confirm.
 ## Status: what was tested on what
 
 The framework was designed for my MSc thesis experiment (EZH2 proximity
-proteomics in RL cells, below). The mass spectrometry data for that experiment
-were not available, so **no component has been run on my own MS data**.
+proteomics in RL cells, below). With MS data pending at graduation, so no component has been run on my own MS data.
 
 | Component | Tested on |
 |---|---|
