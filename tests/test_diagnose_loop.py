@@ -184,3 +184,15 @@ def test_reply_without_tool_call_is_nudged():
     assert client.sent[1]["content"][0]["text"].startswith("Continue by calling a tool")
     assert any(e["event"] == "no_tool_call" for e in result.events)
     assert result.finish is not None
+
+
+def test_incomplete_finish_is_rejected():
+    incomplete = ("finish", {"status": "unresolved", "final_run": "run0", "diagnosis": "d",
+                             "evidence": "e", "remaining_issues": []})
+    loop, client = make_loop([incomplete, ("finish", {**incomplete[1], "final_run": "run7", "next_steps": []}),
+                              finish("unresolved", "run0")])
+    result = loop.run()
+    assert "Missing fields ['next_steps']" in client.last_result(1)
+    assert "Unknown final_run" in client.last_result(2)
+    assert result.finish["next_steps"] == []
+    assert sum(e["event"] == "finish_rejected_by_code" for e in result.events) == 2

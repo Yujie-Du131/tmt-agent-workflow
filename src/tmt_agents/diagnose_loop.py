@@ -434,6 +434,9 @@ class DiagnoseLoop:
         return None
 
     def tool_request_rerun(self, **kw) -> str:
+        for k in ("param_changes", "ext_args"):
+            if not isinstance(kw.get(k) or {}, dict):
+                return f"Rejected: {k} must be an object."
         req = RerunRequest(kw.get("base_run", ""), kw.get("param_changes") or {},
                            kw.get("ext_args") or {}, kw.get("hypothesis", ""),
                            kw.get("expected_change", ""))
@@ -466,6 +469,21 @@ class DiagnoseLoop:
         if name not in handlers:
             return f"Unknown tool {name}"
         return handlers[name]()
+
+    def validate_finish(self, args: dict) -> str | None:
+        """The API does not enforce the tool schema, so check it here."""
+        spec = next(t["input_schema"] for t in TOOLS if t["name"] == "finish")
+        missing = [k for k in spec["required"] if k not in args]
+        if missing:
+            return f"Missing fields {missing}."
+        if args["status"] not in spec["properties"]["status"]["enum"]:
+            return f"Invalid status {args['status']!r}."
+        if args["final_run"] not in self.runs:
+            return f"Unknown final_run {args['final_run']!r}; existing runs: {list(self.runs)}."
+        for k in ("remaining_issues", "next_steps"):
+            if not isinstance(args[k], list):
+                return f"{k} must be a list."
+        return None
 
     def code_check(self, finish: dict | None) -> dict:
         """Compare the model's stated status with the flags computed by code."""
@@ -508,8 +526,12 @@ class DiagnoseLoop:
                     continue
                 self.events.append({"event": "tool_call", "name": b["name"], "input": b["input"]})
                 if b["name"] == "finish":
-                    finish = b["input"]
-                    output = "Recorded."
+                    if err := self.validate_finish(b["input"]):
+                        self.events.append({"event": "finish_rejected_by_code", "reason": err})
+                        output = f"Rejected: {err} Call finish again."
+                    else:
+                        finish = b["input"]
+                        output = "Recorded."
                 else:
                     output = self.call_tool(b["name"], b["input"])
                 self.events.append({"event": "tool_result", "name": b["name"], "output": output})
