@@ -91,8 +91,11 @@ check consistent.
   `MSSTATS_CONVERTER` reads the consensusXML written by `ISOBARIC_WORKFLOW`,
   so the table should change. The model raised the same two possibilities
   and did not claim either. Checked afterwards: the MSstats input tables of
-  run0, run1 and run2 have the same md5, so the correction does not reach
-  the table; whether IsobaricWorkflow applies it is not yet known.
+  run0, run1 and run2 have the same md5, and the reporter intensities in
+  the IsobaricWorkflow consensusXML of run2 are identical to those of run0
+  (only metadata differ). IsobaricWorkflow accepted the correction options
+  but did not apply them. The model's "no effect" observation was correct;
+  the cause lies below the pipeline parameters it could see.
 - The IsobaricWorkflow log of run2 also reports the reporter calibration:
   median m/z error about -0.0075 for 127 and 129, about -0.0012 for the
   other channels, i.e. an extra 6.3 mDa on the two channels that fail at

@@ -244,9 +244,13 @@ the fixed start, every rerun decided by the analyst at the terminal; review in
   (purity 0.7, isotope correction with a matrix) left every metric
   unchanged, including protein counts. The MSstats input tables of the
   fixed run, the isotope-correction run without a matrix and the run with
-  the matrix are byte-identical (same md5), so the correction does not
-  reach the MSstats table. Whether IsobaricWorkflow applies it (and the
-  converter ignores it) is not yet known.
+  the matrix are byte-identical (same md5). One level up, the reporter
+  intensities (`it` attributes) in the IsobaricWorkflow consensusXML of the
+  run with the matrix are identical to those of the uncorrected run; only
+  metadata differ. So IsobaricWorkflow accepted
+  `-quantification:isotope_correction true` and the TMT6 matrix without
+  applying any correction. Not yet traced in the OpenMS source; the purity
+  filter has not been checked at this level.
 
 ## Repository layout
 
@@ -322,15 +326,16 @@ nextflow run bigbio/quantms -r 1.10.0 -profile test_tmt,docker \
 
 ## Next steps
 
-- Find out why the purity filter and isotope correction do not reach the
-  MSstats table (compare the IsobaricWorkflow consensusXML of these runs).
+- Trace why IsobaricWorkflow ignores the isotope correction (OpenMS source
+  and log), check the purity filter the same way, and report both
+  quantms/OpenMS issues together with the `reporter_mass_shift` one.
 - Give the agent the IsobaricWorkflow log as a tool: its reporter
   calibration statistics show the 127/129 offset directly.
 - Apply to the thesis data once available.
 - Detection-strength curves (vary the size of planted problems).
 - An automatic check that every number quoted in an LLM report appears in the
   metrics.
-- Report the parameter-passing issue to quantms.
+- Report the parameter issues to quantms (see above).
 
 Developed with the help of an AI coding assistant (Claude). All runs,
 benchmarks and manual reviews were carried out and checked by the author.
