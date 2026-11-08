@@ -123,8 +123,8 @@ spike-in ratio recovery.
   used. The pipeline option `--reporter_mass_shift` was recorded in the run
   parameters but not passed to the OpenMS `IsobaricWorkflow` step. Passing
   the option through `ext.args` (`configs/`) with 0.01 Th recovered both
-  channels (459-463 proteins in all channels). The IsobaricWorkflow log of a later live run (with 0.01 Th)
-  reports the reporter calibration directly: median m/z error about -0.0075
+  channels (459-463 proteins in all channels). The IsobaricWorkflow log of
+  a later live run (with 0.01 Th) reports the reporter calibration directly: median m/z error about -0.0075
   for 127 and 129 against about -0.0012 for the other four channels, an extra
   offset of about 6.3 mDa on exactly the two failing channels. That is
   larger than the default tolerance (0.002) and smaller than the fix (0.01),
@@ -176,7 +176,7 @@ Code keeps control of everything that can be checked:
 
 Reruns are executed by one of two backends:
 
-- **Replay** (used here): returns only runs that were actually executed. For
+- **Replay** (used for the replayed runs): returns only runs that were actually executed. For
   PXD000001 these are the default run and the run with
   `-extraction:reporter_mass_shift 0.01` passed through `ext.args`. Changing
   only the `reporter_mass_shift` pipeline parameter returns the default run
@@ -224,9 +224,9 @@ On review (`examples/diagnose_loop/manual_review.md`):
   explicit default argument missing from the replayed command) affected one
   remaining-issue statement and was fixed afterwards.
 
-**Live runs** (`examples/diagnose_loop_live/`, 1 run from the default start and 2 from
-the fixed start, every rerun decided by the analyst at the terminal; review in
-`examples/diagnose_loop_live/manual_review.md`):
+**Live runs** (`examples/diagnose_loop_live/`, 1 run from the default start
+and 2 from the fixed start, every rerun decided by the analyst at the
+terminal; review in `examples/diagnose_loop_live/manual_review.md`):
 
 - From the default run: one rerun with the `ext.args` fix, "resolved",
   consistent with the code check. The fixed step came from the Nextflow
@@ -245,6 +245,7 @@ the fixed start, every rerun decided by the analyst at the terminal; review in
   left the command unchanged, and supplied the bundled TMT6 matrix. The
   analyst refused a repeat of the purity test and the revert of the fix;
   the model did not ask again and kept the fix in its conclusion.
+
 **Why the purity filter and the isotope correction changed nothing.** Both
 changes reached the IsobaricWorkflow command but left every metric
 unchanged. The MSstats input tables of the fixed run, the
@@ -252,7 +253,8 @@ isotope-correction run without a matrix and the run with the matrix are
 byte-identical (same md5), and so are the reporter intensities (`it`
 attributes) in the IsobaricWorkflow consensusXML of the fixed run and the
 run with the matrix; only metadata differ. The OpenMS source of the build in
-the container (IsobaricWorkflow 3.6.0-pre-HEAD-2026-07-02, commit 266ee85) explains both:
+the container (IsobaricWorkflow 3.6.0-pre-HEAD-2026-07-02, commit 266ee85) explains
+both:
 
 - IsobaricWorkflow applies the NNLS isotope correction to every spectrum
   unconditionally, with the method's correction matrix. The default TMT6
@@ -269,8 +271,6 @@ the container (IsobaricWorkflow 3.6.0-pre-HEAD-2026-07-02, commit 266ee85) expla
 
 This also corrects a statement repeated by the blind QC reports, all agent
 runs and earlier versions of this README: isotope correction was not off.
-
-## Repository layout
 
 ## Repository layout
 
@@ -315,9 +315,11 @@ uv run python scripts/run_real_qc_report.py data/quantms_pxd000001 shift0.002 ex
 # 5. Diagnose-rerun loop (replay); without --auto-approve each rerun is approved at the terminal
 uv run python scripts/run_diagnose_loop.py data/quantms_pxd000001 examples/diagnose_loop --start shift0.002 --runs 3 --auto-approve
 uv run python scripts/run_diagnose_loop.py data/quantms_pxd000001 examples/diagnose_loop --start shift0.01 --runs 3 --auto-approve
-# live (Nextflow + Docker), launched from the folder of an earlier quantms run to reuse its cache
+# live (Nextflow + Docker), launched from the folder of an earlier quantms run to reuse its cache;
+# the config must not contain the ext.args fix (here: only resourceLimits)
 uv run python scripts/run_diagnose_loop.py data/quantms_pxd000001 examples/diagnose_loop_live --start shift0.002 \
-  --live ~/quantms_test --nf-config ~/quantms_test/small.config --nf-param root_folder=/home/ubuntu/pxd000001 --nf-param local_input_type=raw
+  --live ~/quantms_test --nf-config ~/quantms_test/small_base.config \
+  --nf-param root_folder=/home/ubuntu/pxd000001 --nf-param local_input_type=raw
 ```
 
 The quantms run itself (Nextflow, Docker; about 25 min on 2 vCPU / 8 GB):
