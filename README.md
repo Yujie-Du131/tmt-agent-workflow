@@ -13,7 +13,8 @@ draft for the analyst to confirm.
 ## Status: what was tested on what
 
 The framework was designed for my MSc thesis experiment (EZH2 proximity
-proteomics in RL cells, below). With MS data pending at graduation, so no component has been run on my own MS data.
+proteomics in RL cells, below). MS data were still pending at graduation, so
+no component has been run on my own MS data.
 
 | Component | Tested on |
 |---|---|
@@ -24,7 +25,8 @@ proteomics in RL cells, below). With MS data pending at graduation, so no compon
 ## The experiment the framework was designed for
 
 RL cells (diffuse large B-cell lymphoma) were grown as six independent
-cultures, three treated with the EZH2 inhibitor CPI-169 and three with DMSO.
+cultures (one flask each) and treated for eight days, three with the EZH2
+inhibitor CPI-169 and three with DMSO.
 From each culture, one aliquot was labelled by antibody-guided proximity
 labelling (pA-APEX2) with an anti-EZH2 antibody and one with an IgG control,
 giving 12 samples in one TMT run. The primary comparison is the
@@ -84,10 +86,11 @@ has not been run on data.
 
 `qc_simulate.py` simulates protein intensities for the 2 x 2 split-plot design
 with one planted problem per scenario; `qc_metrics.py` computes channel
-metrics, including a paired-ratio slope for each culture (log2 EZH2/IgG
-regressed on the other cultures), which drops under ratio compression and
-turns negative when the two channels of a culture are swapped. The LLM writes
-the report from the metrics alone (`qc_report.py`).
+metrics (loading, correlation with same-antibody channels, PCA scores and
+their association with each factor), including a paired-ratio slope for each
+culture (log2 EZH2/IgG regressed on the other cultures), which drops under
+ratio compression and turns negative when the two channels of a culture are
+swapped. The LLM writes the report from the metrics alone (`qc_report.py`).
 
 | Scenario | Threshold baseline | LLM (3 runs) |
 |---|---|---|
@@ -198,7 +201,7 @@ nextflow run bigbio/quantms -r 1.10.0 -profile test_tmt,docker \
 
 ## Next steps
 
-- Apply to the thesis data once available, starting with the sensitivity
+- Apply to the thesis data once available.
 - Detection-strength curves (vary the size of planted problems).
 - An automatic check that every number quoted in an LLM report appears in the
   metrics.
