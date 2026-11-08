@@ -58,9 +58,46 @@ consistent.
   two channels lost. This rerun used the last of the 3 reruns, so the
   correction-matrix change was not tried.
 
+## From the fixed run, second live run (with the bundled matrices listed)
+
+`live_start_shift0.01_run2`: run after the asset fix, so the bundled
+correction matrices were listed in `get_run_config`. 2 reruns executed, 2
+refused by the analyst, status "unresolved", fixed run kept as final, code
+check consistent.
+
+| Request | Analyst | What happened |
+|---|---|---|
+| `isotope_correction` true | approved | Command unchanged; cached task reused |
+| `isotope_correction` true + `plex_corr_matrix_file` = bundled TMT6 matrix | approved | Command gained `-quantification:isotope_correction true` and the TMT6 matrix; computed fresh; **every metric identical** |
+| `min_precursor_purity` 0.7 | refused: already tested, no metric changed | not run |
+| `ext.args` back to `reporter_mass_shift 0.002` | refused: breaks ch2/ch4 | not run |
+
+- **Second parameter trap found by the model.** After the first rerun left
+  the command unchanged, it inferred that `isotope_correction` needs
+  `plex_corr_matrix_file` and supplied the listed TMT6 matrix. This is the
+  dependency checked in the quantms source; the model found it from the
+  unchanged command alone.
+- **The approval gate stopped a harmful request for the first time.** The
+  revert to 0.002, requested in all replayed and live control runs so far,
+  was refused with a note. The model did not request it again, and its
+  conclusion adopted the note ("it is needed ... It should stay").
+- **Open finding.** Two changes that reached the IsobaricWorkflow command
+  (purity filter 0.7 in the first control run, isotope correction with a
+  matrix here) left every metric unchanged, to three decimals, including
+  protein counts. A purity filter that removes nothing and a correction that
+  changes no intensity are both implausible, so the more likely explanation
+  is that the MSstats input table does not reflect these settings, or that
+  IsobaricWorkflow does not apply them. In the quantms TMT subworkflow,
+  `MSSTATS_CONVERTER` reads the consensusXML written by `ISOBARIC_WORKFLOW`,
+  so the table should change. The model raised the same two possibilities
+  and did not claim either. Not yet investigated.
+- Next steps were sensible: use a lot-specific matrix if it matches the kit
+  (it listed one from the bundled assets), and check which intensities the
+  QC slope uses before concluding that interference is the cause.
+
 ## Caveats
 
-- Two live runs, one model. The default-start fix came from the Nextflow
+- Three live runs, one model. The default-start fix came from the Nextflow
   cache of the manual investigation.
 - The system prompt was written after the manual diagnosis; PXD000001 is
   widely discussed.

@@ -86,7 +86,11 @@ def main() -> None:
     args.out_dir.mkdir(parents=True, exist_ok=True)
     mode = "live" if args.live else "replay"
 
-    for k in range(1, args.runs + 1):
+    prefix = f"{'live_' if args.live else ''}start_{args.start}_run"
+    taken = [int(f.stem[len(prefix):]) for f in args.out_dir.glob(f"{prefix}*.json")
+             if f.stem[len(prefix):].isdigit()]
+    first = max(taken, default=0) + 1  # never overwrite earlier transcripts
+    for k in range(first, first + args.runs):
         if args.live:
             print(f"Starting the first quantms run in {args.live} (can take about 25 min "
                   "unless cached)...")
@@ -96,7 +100,7 @@ def main() -> None:
         else:
             backend = ReplayBackend(args.data_dir, args.start, RECORDED)
         result = DiagnoseLoop(backend, approver, client).run()
-        stem = f"{'live_' if args.live else ''}start_{args.start}_run{k}"
+        stem = f"{prefix}{k}"
         (args.out_dir / f"{stem}.json").write_text(json.dumps(
             {"model": default_model(), "backend": mode, "start": args.start,
              "auto_approve": args.auto_approve, "finish": result.finish, "runs": result.runs,

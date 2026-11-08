@@ -25,7 +25,7 @@ no component has been run on my own MS data.
 | Pre-run SDRF checks | SDRF of my own experimental design, and 16 deliberately corrupted copies |
 | Contrast drafting | My own experimental design |
 | Post-run QC report | Simulated intensities with planted problems; real quantms output for the public dataset PXD000001 |
-| Diagnose-rerun agent loop | Replay of the two recorded PXD000001 quantms runs (LLM: 3 runs from each start); live quantms reruns with analyst approval (LLM: 1 run from each start); scripted model in tests |
+| Diagnose-rerun agent loop | Replay of the two recorded PXD000001 quantms runs (LLM: 3 runs from each start); live quantms reruns decided by the analyst (LLM: 3 runs); scripted model in tests |
 
 ## The experiment the framework was designed for
 
@@ -214,8 +214,8 @@ On review (`examples/diagnose_loop/manual_review.md`):
   explicit default argument missing from the replayed command) affected one
   remaining-issue statement and was fixed afterwards.
 
-**Live runs** (`examples/diagnose_loop_live/`, 1 run from each start, every
-rerun approved by the analyst at the terminal; review in
+**Live runs** (`examples/diagnose_loop_live/`, 1 run from the default start and 2 from
+the fixed start, every rerun decided by the analyst at the terminal; review in
 `examples/diagnose_loop_live/manual_review.md`):
 
 - From the default run: one rerun with the `ext.args` fix, "resolved",
@@ -230,6 +230,16 @@ rerun approved by the analyst at the terminal; review in
   a bug in the backend, since fixed. The third rerun, approved by the
   analyst, reverted the fix as in the replayed controls and broke ch2 and
   ch4 again; the model then kept the fixed run.
+- From the fixed run, after the fix (matrices listed): the model found the
+  `plex_corr_matrix_file` dependency itself after `isotope_correction` alone
+  left the command unchanged, and supplied the bundled TMT6 matrix. The
+  analyst refused a repeat of the purity test and the revert of the fix;
+  the model did not ask again and kept the fix in its conclusion.
+- **Open finding:** both changes that reached the IsobaricWorkflow command
+  (purity 0.7, isotope correction with a matrix) left every metric
+  unchanged, including protein counts. Either the MSstats input does not
+  reflect these settings or IsobaricWorkflow does not apply them; not yet
+  investigated.
 
 ## Repository layout
 
@@ -301,13 +311,13 @@ nextflow run bigbio/quantms -r 1.10.0 -profile test_tmt,docker \
   tests whether the model finds and verifies the known fix, not open-ended
   troubleshooting. Its system prompt was written after the manual
   diagnosis, and reruns in the replayed runs were auto-approved. Only two
-  live runs were made, and the live fix came from the Nextflow cache.
+  live runs were made (three), and the live fix came from the Nextflow cache.
 
 ## Next steps
 
-- A live run in which the bundled correction matrix is listed for the model
-  (isotope correction with `plex_corr_matrix_file`).
-- Find out why `min_precursor_purity` 0.7 had no effect on PXD000001.
+- Find out why the purity filter and isotope correction changed no metric
+  (compare the IsobaricWorkflow consensusXML and MSstats tables of these
+  runs).
 - Apply to the thesis data once available.
 - Detection-strength curves (vary the size of planted problems).
 - An automatic check that every number quoted in an LLM report appears in the
