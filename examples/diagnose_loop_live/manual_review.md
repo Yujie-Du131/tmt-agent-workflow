@@ -93,9 +93,14 @@ check consistent.
   and did not claim either. Checked afterwards: the MSstats input tables of
   run0, run1 and run2 have the same md5, and the reporter intensities in
   the IsobaricWorkflow consensusXML of run2 are identical to those of run0
-  (only metadata differ). IsobaricWorkflow accepted the correction options
-  but did not apply them. The model's "no effect" observation was correct;
-  the cause lies below the pipeline parameters it could see.
+  (only metadata differ). The OpenMS source of the build used (IsobaricWorkflow 3.6.0-pre-HEAD-2026-07-02)
+  explains it: IsobaricWorkflow always applies the isotope correction with
+  the method's default matrix, which is identical to the bundled matrix the
+  model supplied, and it never applies `min_precursor_purity` (only
+  IsobaricAnalyzer does). So both reruns were no-ops. The model's "no
+  effect" observation was correct; its premise that correction was off
+  (shared by every report so far) was wrong. The cause lies below the
+  pipeline parameters it could see.
 - The IsobaricWorkflow log of run2 also reports the reporter calibration:
   median m/z error about -0.0075 for 127 and 129, about -0.0012 for the
   other channels, i.e. an extra 6.3 mDa on the two channels that fail at

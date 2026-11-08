@@ -1,5 +1,7 @@
 # Manual review: diagnose-rerun loop, final runs
 
+**Correction (9 Nov 2026):** statements here that isotope correction was off are wrong. The quantms parameter `isotope_correction` was false, but the OpenMS build used (IsobaricWorkflow 3.6.0-pre-HEAD-2026-07-02) applies the correction anyway with its default TMT6 matrix. See the end of README section 5.
+
 Model `claude-sonnet-5-5`, replay backend on PXD000001, reruns auto-approved,
 3 runs from each starting point. Code at commit ea7af94 (after the replay
 fix found in the pilot, `examples/diagnose_loop_pilot/manual_review.md`).

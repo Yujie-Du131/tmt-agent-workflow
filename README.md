@@ -133,8 +133,11 @@ spike-in ratio recovery.
   consistent with older TMT6 reagents. The reagent lot used for PXD000001
   was not checked.
 - **Ratio compression.** Pooled spike-in slope 0.78 (1 = full recovery): a
-  true 10-fold difference was measured as about 6-fold. Isotope correction was
-  off in this run.
+  true 10-fold difference was measured as about 6-fold. The quantms
+  parameter `isotope_correction` was false, but the OpenMS build in the
+  container applies isotope correction with its default TMT6 matrix anyway
+  (section 5), so this is the compression after a generic, not
+  lot-specific, correction.
 
 Full record: `examples/quantms_pxd000001_investigation.md`.
 
@@ -188,7 +191,9 @@ Reruns are executed by one of two backends:
   changed are rerun. In quantms 1.10.0, `isotope_correction` has an effect
   only when `plex_corr_matrix_file` is also set (checked in the module
   source); quantms's bundled correction matrices are copied into the launch
-  folder and listed for the model. Used for the live runs below.
+  folder and listed for the model. Used for the live runs below. (What
+  OpenMS then does with these options is a separate question; see the end
+  of this section.)
 
 The tests drive the loop with a scripted model through the
 manual path of section 4 (the parameter change has no effect; the `ext.args`
@@ -229,7 +234,7 @@ the fixed start, every rerun decided by the analyst at the terminal; review in
   `CACHED`), so it was not recomputed.
 - From the fixed run: three reruns, "unresolved", fixed run kept as final.
   `min_precursor_purity` 0.7 was computed fresh and changed nothing
-  (unexplained). `isotope_correction` alone left the command unchanged, which
+  (explained below). `isotope_correction` alone left the command unchanged, which
   the model noticed, but it did not identify that `plex_corr_matrix_file` is
   also required; the bundled matrices had not been listed for it because of
   a bug in the backend, since fixed. The third rerun, approved by the
@@ -240,17 +245,32 @@ the fixed start, every rerun decided by the analyst at the terminal; review in
   left the command unchanged, and supplied the bundled TMT6 matrix. The
   analyst refused a repeat of the purity test and the revert of the fix;
   the model did not ask again and kept the fix in its conclusion.
-- **Open finding:** both changes that reached the IsobaricWorkflow command
-  (purity 0.7, isotope correction with a matrix) left every metric
-  unchanged, including protein counts. The MSstats input tables of the
-  fixed run, the isotope-correction run without a matrix and the run with
-  the matrix are byte-identical (same md5). One level up, the reporter
-  intensities (`it` attributes) in the IsobaricWorkflow consensusXML of the
-  run with the matrix are identical to those of the uncorrected run; only
-  metadata differ. So IsobaricWorkflow accepted
-  `-quantification:isotope_correction true` and the TMT6 matrix without
-  applying any correction. Not yet traced in the OpenMS source; the purity
-  filter has not been checked at this level.
+**Why the purity filter and the isotope correction changed nothing.** Both
+changes reached the IsobaricWorkflow command but left every metric
+unchanged. The MSstats input tables of the fixed run, the
+isotope-correction run without a matrix and the run with the matrix are
+byte-identical (same md5), and so are the reporter intensities (`it`
+attributes) in the IsobaricWorkflow consensusXML of the fixed run and the
+run with the matrix; only metadata differ. The OpenMS source of the build in
+the container (IsobaricWorkflow 3.6.0-pre-HEAD-2026-07-02, commit 266ee85) explains both:
+
+- IsobaricWorkflow applies the NNLS isotope correction to every spectrum
+  unconditionally, with the method's correction matrix. The default TMT6
+  matrix is identical, value for value, to quantms's bundled
+  `tmt6plex_default_correction.matrix`, which is the one the model
+  supplied. So the correction was on in every run, with the same matrix.
+  quantms's `isotope_correction=false` does not turn it off; it only omits
+  the matrix argument. (Later OpenMS versions check
+  `quantification:isotope_correction` before correcting.)
+- `min_precursor_purity` is applied only in
+  `IsobaricChannelExtractor::extractChannels`, the path used by
+  IsobaricAnalyzer. IsobaricWorkflow calls `extractSingleSpec`, which
+  annotates purity but does not filter on it.
+
+This also corrects a statement repeated by the blind QC reports, all agent
+runs and earlier versions of this README: isotope correction was not off.
+
+## Repository layout
 
 ## Repository layout
 
@@ -321,21 +341,22 @@ nextflow run bigbio/quantms -r 1.10.0 -profile test_tmt,docker \
 - In replay mode the agent loop can reach only two recorded runs, so it
   tests whether the model finds and verifies the known fix, not open-ended
   troubleshooting. Its system prompt was written after the manual
-  diagnosis, and reruns in the replayed runs were auto-approved. Only two
-  live runs were made (three), and the live fix came from the Nextflow cache.
+  diagnosis, and reruns in the replayed runs were auto-approved. Only three
+  live runs were made, and the live fix came from the Nextflow cache.
 
 ## Next steps
 
-- Trace why IsobaricWorkflow ignores the isotope correction (OpenMS source
-  and log), check the purity filter the same way, and report both
-  quantms/OpenMS issues together with the `reporter_mass_shift` one.
+- Report to quantms: `reporter_mass_shift` is not passed to
+  IsobaricWorkflow, and `isotope_correction` / `min_precursor_purity` do not
+  control what the bundled IsobaricWorkflow does.
+- Use a lot-specific correction matrix (if the PXD000001 kit lot can be
+  found) to see how much of the ratio compression is channel crosstalk.
 - Give the agent the IsobaricWorkflow log as a tool: its reporter
   calibration statistics show the 127/129 offset directly.
 - Apply to the thesis data once available.
 - Detection-strength curves (vary the size of planted problems).
 - An automatic check that every number quoted in an LLM report appears in the
   metrics.
-- Report the parameter issues to quantms (see above).
 
 Developed with the help of an AI coding assistant (Claude). All runs,
 benchmarks and manual reviews were carried out and checked by the author.

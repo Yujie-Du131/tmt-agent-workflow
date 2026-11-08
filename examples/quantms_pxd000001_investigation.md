@@ -1,5 +1,7 @@
 # Real quantms output: two empty TMT channels, diagnosed and fixed
 
+**Correction (9 Nov 2026):** statements here that isotope correction was off are wrong. The quantms parameter `isotope_correction` was false, but the OpenMS build used (IsobaricWorkflow 3.6.0-pre-HEAD-2026-07-02) applies the correction anyway with its default TMT6 matrix. See the end of README section 5.
+
 Data: PXD000001 (TMT6plex, Erwinia background with four spiked proteins at
 known amounts), processed with the quantms `test_tmt` profile, quantms 1.10.0,
 OpenMS image `ghcr.io/bigbio/openms-tools-thirdparty:2026.07.02`.
