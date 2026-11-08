@@ -31,8 +31,12 @@ class ScriptedClient:
         self.messages = SimpleNamespace(create=self._create)
 
     def _create(self, **kw):
+        assert "tool_choice" not in kw  # forced tool use is not supported by all models
         self.sent.append(kw["messages"][-1])
         name, args = self.calls.pop(0)
+        if name == "text":  # a reply without a tool call
+            return SimpleNamespace(content=[SimpleNamespace(type="text", text=args)],
+                                   stop_reason="end_turn")
         block = SimpleNamespace(type="tool_use", id=f"t{len(self.sent)}", name=name, input=args)
         return SimpleNamespace(content=[block], stop_reason="tool_use")
 
@@ -172,3 +176,11 @@ def test_nextflow_backend_builds_config_and_command(tmp_path):
     cmd = nf.command({"isotope_correction": True}, tmp_path / "run1.config", "results_run1")
     assert cmd[:6] == ["nextflow", "run", "bigbio/quantms", "-r", "1.10.0", "-profile"]
     assert "-resume" in cmd and cmd[-2:] == ["--isotope_correction", "true"]
+
+
+def test_reply_without_tool_call_is_nudged():
+    loop, client = make_loop([("text", "Let me think."), finish("unresolved", "run0")])
+    result = loop.run()
+    assert client.sent[1]["content"][0]["text"].startswith("Continue by calling a tool")
+    assert any(e["event"] == "no_tool_call" for e in result.events)
+    assert result.finish is not None

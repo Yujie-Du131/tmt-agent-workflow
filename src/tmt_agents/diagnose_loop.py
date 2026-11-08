@@ -494,9 +494,11 @@ class DiagnoseLoop:
         for n_call in range(self.max_tool_calls):
             response = self.client.messages.create(
                 model=self.model, max_tokens=4000, system=SYSTEM, tools=TOOLS,
-                tool_choice={"type": "any"}, messages=messages)
+                messages=messages)
             content = [_block_to_dict(b) for b in response.content]
-            messages.append({"role": "assistant", "content": content})
+            # empty text blocks are rejected by the API when sent back
+            content = [b for b in content if not (b["type"] == "text" and not b["text"].strip())]
+            messages.append({"role": "assistant", "content": content or [{"type": "text", "text": "(no reply)"}]})
             for b in content:
                 if b["type"] == "text" and b["text"].strip():
                     self.events.append({"event": "model_text", "text": b["text"]})
@@ -514,6 +516,10 @@ class DiagnoseLoop:
                 results.append({"type": "tool_result", "tool_use_id": b["id"], "content": output})
             if finish is not None:
                 break
+            if not results:  # the model replied without calling a tool
+                self.events.append({"event": "no_tool_call", "stop_reason": response.stop_reason})
+                results.append({"type": "text", "text": "Continue by calling a tool; "
+                                "call finish to end the investigation."})
             remaining = self.max_tool_calls - n_call - 1
             if remaining <= 1:
                 results.append({"type": "text", "text": "Tool budget almost used. Call finish now."})
@@ -526,6 +532,8 @@ def _block_to_dict(b) -> dict:
         return {"type": "text", "text": b.text}
     if b.type == "tool_use":
         return {"type": "tool_use", "id": b.id, "name": b.name, "input": b.input}
+    if hasattr(b, "model_dump"):  # e.g. thinking blocks, which must be sent back unchanged
+        return b.model_dump(exclude_none=True)
     raise ValueError(f"Unexpected block type {b.type}")
 
 

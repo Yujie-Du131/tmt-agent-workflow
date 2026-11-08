@@ -195,7 +195,7 @@ scripts/          command-line entry points (one per step)
 data/             own_design/, corrupted_sdrf/, simulated_qc/, quantms_pxd000001/
 examples/         outputs, benchmark results and manual reviews
 configs/          Nextflow config used for the fixed quantms run
-tests/            94 tests; none calls the API
+tests/            95 tests; none calls the API
 ```
 
 ## Reproduce
