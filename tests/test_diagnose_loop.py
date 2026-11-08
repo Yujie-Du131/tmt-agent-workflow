@@ -215,6 +215,11 @@ def test_fixed_run_shows_its_ext_args_and_can_be_reverted():
     assert compute_qc(loop.runs["run2"]).flagged == ["ch2", "ch4"]
     assert loop.runs["run2"].ext_args == {}
     assert "run1=['ch2', 'ch4']" in client.last_result(4) and "corr_to_others" in client.last_result(4)
+    # the explicit default argument appears in the command, as in a live run
+    assert command_diff(loop.runs["run0"].command, loop.runs["run1"].command) == {
+        "removed": ["0.01"], "added": ["0.002"]}
+    assert command_diff(loop.runs["run0"].command, loop.runs["run2"].command) == {
+        "removed": ["-extraction:reporter_mass_shift", "0.01"], "added": []}
 
 
 def test_param_change_from_fixed_run_keeps_fix():

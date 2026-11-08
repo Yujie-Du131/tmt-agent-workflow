@@ -184,22 +184,25 @@ class ReplayBackend:
         return Run("run0", rec.msstats_path, dict(rec.params), rec.command, dict(rec.ext_args),
                    "first run", rec.source)
 
-    def _effective_tokens(self, extra: str) -> Counter:
-        """Tokens of the extra arguments, dropping those equal to an OpenMS default."""
+    def _effective_tokens(self, extra: str) -> tuple[Counter, list[str]]:
+        """Tokens of the extra arguments without those equal to an OpenMS
+        default, and the dropped default arguments."""
         toks = shlex.split(extra)
-        kept, i = [], 0
+        kept, dropped, i = [], [], 0
         while i < len(toks):
             opt = toks[i]
             if opt in self.OPENMS_DEFAULTS and i + 1 < len(toks):
                 try:
                     if float(toks[i + 1]) == self.OPENMS_DEFAULTS[opt]:
+                        dropped += toks[i:i + 2]
                         i += 2
                         continue
                 except ValueError:
                     pass
             kept.append(opt)
             i += 1
-        return command_tokens("IsobaricWorkflow " + " ".join(kept)) - Counter(["IsobaricWorkflow"])
+        kept_tokens = command_tokens("IsobaricWorkflow " + " ".join(kept)) - Counter(["IsobaricWorkflow"])
+        return kept_tokens, dropped
 
     def rerun(self, base: Run, request: RerunRequest, run_id: str) -> Run | str:
         unknown = [k for k in request.param_changes if k not in self.PARAMS_NOT_PASSED]
@@ -209,14 +212,18 @@ class ReplayBackend:
         ext_args = {**base.ext_args, **request.ext_args}
         ext_args = {k: v for k, v in ext_args.items() if v.strip()}
         extra = " ".join(ext_args.get("ISOBARIC_WORKFLOW", "").split())
-        target = command_tokens(self.bare.command) + self._effective_tokens(extra)
+        kept, dropped = self._effective_tokens(extra)
+        target = command_tokens(self.bare.command) + kept
         for tag, rec in self.recorded.items():
             if command_tokens(rec.command) == target:
                 params = {**base.params, **request.param_changes}
                 note = f"rerun of {base.run_id}"
                 if ext_args == base.ext_args:
                     note += "; Nextflow reported ISOBARIC_WORKFLOW as cached"
-                return Run(run_id, rec.msstats_path, params, rec.command, ext_args, note,
+                command = rec.command
+                if dropped:  # show explicit default arguments as a live run would
+                    command = command.replace("    2>&1", f"    {shlex.join(dropped)} \\\n    2>&1", 1)
+                return Run(run_id, rec.msstats_path, params, command, ext_args, note,
                            source=f"replay of recorded run '{tag}'")
         return ("Not available in replay mode: the resulting IsobaricWorkflow command "
                 f"(extra arguments: '{extra}') matches no recorded run. "

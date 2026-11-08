@@ -25,7 +25,7 @@ no component has been run on my own MS data.
 | Pre-run SDRF checks | SDRF of my own experimental design, and 16 deliberately corrupted copies |
 | Contrast drafting | My own experimental design |
 | Post-run QC report | Simulated intensities with planted problems; real quantms output for the public dataset PXD000001 |
-| Diagnose-rerun agent loop | Replay of the two recorded PXD000001 runs: scripted model in tests; pilot LLM runs (3 from each start). **Final LLM runs pending.** |
+| Diagnose-rerun agent loop | Replay of the two recorded PXD000001 quantms runs (LLM: 3 runs from each start; scripted model in tests). Live reruns not executed. |
 
 ## The experiment the framework was designed for
 
@@ -179,22 +179,34 @@ Reruns are executed by one of two backends:
 - **Nextflow** (live): writes an `ext.args` config and reruns quantms with
   `-resume`. Written but not executed in this repository.
 
-Tested so far: the tests drive the loop with a scripted model through the
+The tests drive the loop with a scripted model through the
 manual path of section 4 (the parameter change has no effect; the `ext.args`
 change clears both flagged channels) and through refused, invalid,
 unavailable and over-budget requests, and status conflicts.
 
-**Pilot LLM runs** (`examples/diagnose_loop_pilot/`, 3 runs from each
-start). From the default run, 3/3 runs found the `ext.args` fix and finished
-"resolved", consistent with the code check; two took the same path as the
-manual investigation (parameter first, no effect, then `ext.args`). From the
-fixed run (control), 3/3 reported no channel problem and left the ratio
-compression unresolved, because replay could not serve their proposed
-reruns. The control runs exposed a replay bug (the fixed run's `ext.args`
-were not reported), which was fixed; one control run had tried to revert
-the fix on wrong reasoning. Review, including incorrect statements:
-`examples/diagnose_loop_pilot/manual_review.md`. Final runs on the fixed
-code are pending.
+**LLM runs** (`examples/diagnose_loop/`, 3 runs from each start, reruns
+auto-approved):
+
+| Start | Outcome | Reruns | Code check |
+|---|---|---|---|
+| Default run (ch2, ch4 nearly empty) | 3/3 found the `ext.args` fix and finished "resolved"; 2/3 took the manual path (parameter first, no effect, then `ext.args`) | 1-2 | consistent 3/3 |
+| Fixed run (control) | 3/3 reported no channel problem and left the ratio compression unresolved (proposed reruns not available in replay) | 1 served | consistent 3/3 |
+
+On review (`examples/diagnose_loop/manual_review.md`):
+
+- From the default run, two runs proposed that the 127/129 reporters are
+  offset by an isotopologue mass difference, which matches the reagent
+  explanation above; none of the blind QC reports had. All three also kept
+  instrument calibration as a candidate, which cannot explain a failure of
+  two channels only.
+- All three control runs asked to revert the `ext.args` override on weak
+  reasoning, which broke ch2 and ch4 again. All three then concluded that
+  the override is needed and named the fixed run as final. With live
+  reruns, the approval gate is where such a request would be stopped.
+- A pilot round (`examples/diagnose_loop_pilot/`) exposed a replay bug,
+  fixed before these runs. One replay artefact found in these runs (an
+  explicit default argument missing from the replayed command) affected one
+  remaining-issue statement and was fixed afterwards.
 
 ## Repository layout
 
@@ -262,11 +274,13 @@ nextflow run bigbio/quantms -r 1.10.0 -profile test_tmt,docker \
 - In replay mode the agent loop can reach only two recorded runs, so it
   tests whether the model finds and verifies the known fix, not open-ended
   troubleshooting. Its system prompt was written after the manual
-  diagnosis. The live Nextflow backend has not been run.
+  diagnosis, and reruns in the LLM runs were auto-approved. The live
+  Nextflow backend has not been run.
 
 ## Next steps
 
-- Final agent-loop runs on the fixed replay backend (3 from each start).
+- Run the agent loop with the live Nextflow backend, starting with the ratio
+  compression reruns it proposed (isotope correction, precursor purity).
 - Apply to the thesis data once available.
 - Detection-strength curves (vary the size of planted problems).
 - An automatic check that every number quoted in an LLM report appears in the
