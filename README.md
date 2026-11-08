@@ -1,14 +1,18 @@
 # tmt-agent-workflow
 
 LLM-assisted checks around a quantms/Nextflow TMT proteomics workflow: metadata
-validation before a run, contrast drafting for the analyst to confirm, and QC
-reports written from computed metrics (not plots) after a run.
+validation before a run, contrast drafting for the analyst to confirm, QC
+reports written from computed metrics (not plots) after a run, and an agent
+loop that diagnoses a QC problem, requests reruns with changed settings
+(approved by the analyst) and compares the runs.
 
 Deterministic code does everything that can be counted or matched. The LLM is
 used only where code cannot help: comparing metadata with the researcher's
 free-text description of the experiment, explaining problems, and turning QC
-metrics into a report with likely causes and checks. Every LLM output is a
-draft for the analyst to confirm.
+metrics into a report with likely causes and checks. The agent loop is the
+one place where the model chooses the next action, because after a QC problem
+the next step depends on interpreting the result. Every LLM output is a draft
+for the analyst to confirm.
 
 ## Status: what was tested on what
 
@@ -21,6 +25,7 @@ no component has been run on my own MS data.
 | Pre-run SDRF checks | SDRF of my own experimental design, and 16 deliberately corrupted copies |
 | Contrast drafting | My own experimental design |
 | Post-run QC report | Simulated intensities with planted problems; real quantms output for the public dataset PXD000001 |
+| Diagnose-rerun agent loop | Replay of the two recorded PXD000001 runs, driven by a scripted model in tests. **Not yet run with the LLM.** |
 
 ## The experiment the framework was designed for
 
@@ -139,17 +144,58 @@ which cannot explain a failure of two channels only, and no run proposed the
 reagent explanation. The prompt was written after the diagnosis, and the
 dataset is widely discussed, so prior knowledge cannot be ruled out.
 
+### 5. Diagnose-rerun agent loop
+
+`diagnose_loop.py` automates the investigation in section 4. The model works
+through five tools: `get_qc` and `get_run_config` (metrics, flagged channels,
+parameters and the IsobaricWorkflow command, all computed or read by code),
+`request_rerun` (one change: pipeline parameters and/or `ext.args` for a
+process, with a stated hypothesis and expected effect), `compare_runs`
+(per-channel changes, flags, changed parameters and changed command
+arguments) and `finish`.
+
+Code keeps control of everything that can be checked:
+
+- Each rerun request is validated (known parameter names and process names,
+  at most 3 reruns, at most 15 tool calls) and then needs the analyst's
+  approval. A refused or unavailable rerun is returned to the model as
+  information.
+- Channels are flagged by code (fewer than half the median number of
+  quantified proteins, or |robust z of median| > 3).
+- When the model finishes, its status is checked against these flags: for
+  example, "resolved" while channels are still flagged, or without any
+  rerun, is recorded as a conflict.
+
+Reruns are executed by one of two backends:
+
+- **Replay** (used here): returns only runs that were actually executed. For
+  PXD000001 these are the default run and the run with
+  `-extraction:reporter_mass_shift 0.01` passed through `ext.args`. Changing
+  only the `reporter_mass_shift` pipeline parameter returns the default run
+  again, with the IsobaricWorkflow command unchanged, as observed in quantms
+  1.10.0. Any other request is refused as not available in replay mode.
+  File names and output folders that would hint at the fix are not shown to
+  the model.
+- **Nextflow** (live): writes an `ext.args` config and reruns quantms with
+  `-resume`. Written but not executed in this repository.
+
+Tested so far: the tests drive the loop with a scripted model through the
+manual path of section 4 (the parameter change has no effect; the `ext.args`
+change clears both flagged channels) and through refused, invalid,
+unavailable and over-budget requests, and status conflicts. No run with the
+LLM has been made yet, so whether the model finds the fix is not yet known.
+
 ## Repository layout
 
 ```
 src/tmt_agents/   sdrf_io, rules, design_check, corruptions, benchmark,
                   contrasts, qc_simulate, qc_metrics, qc_report,
-                  quantms_qc, run_qc_report
+                  quantms_qc, run_qc_report, diagnose_loop
 scripts/          command-line entry points (one per step)
 data/             own_design/, corrupted_sdrf/, simulated_qc/, quantms_pxd000001/
 examples/         outputs, benchmark results and manual reviews
 configs/          Nextflow config used for the fixed quantms run
-tests/            82 tests; none calls the API
+tests/            94 tests; none calls the API
 ```
 
 ## Reproduce
@@ -178,6 +224,10 @@ uv run python scripts/run_qc_benchmark.py         # add --no-llm to skip API cal
 # 4. QC on real quantms output
 uv run python scripts/check_quantms_output.py data/quantms_pxd000001/msstats_in_shift0.01.csv.gz examples/quantms_pxd000001_shift0.01
 uv run python scripts/run_real_qc_report.py data/quantms_pxd000001 shift0.002 examples/real_qc_reports --runs 3
+
+# 5. Diagnose-rerun loop (replay); without --auto-approve each rerun is approved at the terminal
+uv run python scripts/run_diagnose_loop.py data/quantms_pxd000001 examples/diagnose_loop --start shift0.002 --runs 3 --auto-approve
+uv run python scripts/run_diagnose_loop.py data/quantms_pxd000001 examples/diagnose_loop --start shift0.01 --runs 3 --auto-approve
 ```
 
 The quantms run itself (Nextflow, Docker; about 25 min on 2 vCPU / 8 GB):
@@ -198,9 +248,15 @@ nextflow run bigbio/quantms -r 1.10.0 -profile test_tmt,docker \
 - Contrast drafting supports 2 x 2 designs with one within-unit factor.
 - quantms 1.10.0 also writes results in the qpx format; only the MSstats
   input table is read.
+- The agent loop has been tested only with a scripted model. In replay mode
+  it can reach only two recorded runs, so it tests whether the model finds
+  and verifies the known fix, not open-ended troubleshooting. The live
+  Nextflow backend has not been run.
 
 ## Next steps
 
+- Run the agent loop with the LLM (from the default run and from the fixed
+  run as a control, 3 runs each) and review the transcripts.
 - Apply to the thesis data once available.
 - Detection-strength curves (vary the size of planted problems).
 - An automatic check that every number quoted in an LLM report appears in the
