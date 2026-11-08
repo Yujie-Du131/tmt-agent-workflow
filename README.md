@@ -1,68 +1,63 @@
 # tmt-agent-workflow
 
 LLM-assisted checks around a quantms/Nextflow TMT proteomics workflow: metadata
-validation before a run, contrast drafting for the analyst to confirm, QC
-reports written from computed metrics (not plots) after a run, and an agent
-loop that diagnoses a QC problem, requests reruns with changed settings
-(approved by the analyst) and compares the runs.
+validation before a run, contrast drafting, QC reports written from computed
+metrics (not plots), and an agent loop that diagnoses a QC problem, requests
+reruns with changed settings and compares the runs.
 
 Deterministic code does everything that can be counted or matched. The LLM is
 used only where code cannot help: comparing metadata with the researcher's
-free-text description of the experiment, explaining problems, and turning QC
-metrics into a report with likely causes and checks. The agent loop is the
-one place where the model chooses the next action, because after a QC problem
-the next step depends on interpreting the result. Every LLM output is a draft
-for the analyst to confirm.
+free-text description of the experiment, explaining problems, writing QC
+reports, and, in the agent loop, choosing the next rerun, because after a QC
+problem the next step depends on interpreting the result. Every LLM output is
+a draft for the analyst to confirm, and every rerun needs the analyst's
+approval.
 
 ## Status: what was tested on what
 
-The framework was designed for my MSc thesis experiment (EZH2 proximity
-proteomics in RL cells, below). MS data were still pending at graduation, so
-no component has been run on my own MS data.
+The framework was designed for my MSc thesis experiment (below). MS data were
+still pending at graduation, so no component has been run on my own MS data.
 
 | Component | Tested on |
 |---|---|
-| Pre-run SDRF checks | SDRF of my own experimental design, and 16 deliberately corrupted copies |
-| Contrast drafting | My own experimental design |
+| Pre-run SDRF checks | SDRF of my own design, and 16 deliberately corrupted copies |
+| Contrast drafting | My own design |
 | Post-run QC report | Simulated intensities with planted problems; real quantms output for the public dataset PXD000001 |
-| Diagnose-rerun agent loop | Replay of the two recorded PXD000001 quantms runs (LLM: 3 runs from each start); live quantms reruns decided by the analyst (LLM: 3 runs); scripted model in tests |
+| Diagnose-rerun agent loop | PXD000001: replay of two recorded quantms runs, and live quantms reruns |
 
 ## The experiment the framework was designed for
 
 RL cells (diffuse large B-cell lymphoma) were grown as six independent
 cultures (one flask each) and treated for eight days, three with the EZH2
-inhibitor CPI-169 and three with DMSO.
-From each culture, one aliquot was labelled by antibody-guided proximity
-labelling (pA-APEX2) with an anti-EZH2 antibody and one with an IgG control,
-giving 12 samples in one TMT run. The primary comparison is the
-antibody-by-treatment interaction: how CPI-169 changes labelling with EZH2
-relative to IgG.
+inhibitor CPI-169 and three with DMSO. From each culture, one aliquot was
+labelled by antibody-guided proximity labelling (pA-APEX2) with an anti-EZH2
+antibody and one with an IgG control: 12 samples in one TMT run. The primary
+readout is the antibody-by-treatment interaction: how CPI-169 changes
+labelling with EZH2 relative to IgG.
 
-This is a split-plot design. Treatment varies between cultures (n = 3 per
-group); antibody varies within cultures. The interaction is a within-culture
+This is a split-plot design: treatment varies between cultures (n = 3 per
+group), antibody within cultures. The interaction is a within-culture
 contrast, so culture-to-culture variation cancels; the simple treatment
 effects are between-culture contrasts.
 
 Run-level SDRF values (TMTpro 16-plex, instrument, fractionation,
 modifications, channel layout) are **assumptions** pending confirmation with
-the mass spectrometry facility; see `src/tmt_agents/sdrf_io.py`.
+the mass spectrometry facility (`src/tmt_agents/sdrf_io.py`).
 
 ## Components
 
 ### 1. Pre-run metadata checks
 
-- `sdrf_io.py`: builds an SDRF from a simple sample sheet. The generated SDRF
-  passes the official `sdrf-pipelines` validator (templates `ms-proteomics`
-  and `cell-lines`).
-- `rules.py`: deterministic checks against an expected design (`design.json`):
-  unique channels and sample names, labels within the plex, factor levels,
-  balance, run-level consistency and, for paired designs, that every culture
-  has one sample per antibody.
-- `design_check.py` (LLM): drafts `design.json` from a free-text description,
+- `sdrf_io.py` builds an SDRF from a sample sheet; it passes the official
+  `sdrf-pipelines` validator (templates `ms-proteomics`, `cell-lines`).
+- `rules.py` checks it against the expected design (`design.json`): unique
+  channels and names, labels within the plex, factor levels, balance,
+  run-level consistency, and one sample per antibody for every culture.
+- `design_check.py` (LLM) drafts `design.json` from a free-text description,
   compares the SDRF with the description, and explains rule-check results.
 
 **Benchmark** (`examples/benchmark/`): 1 clean SDRF and 16 single-error
-corruptions; LLM run 3 times per file.
+corruptions, LLM run 3 times per file.
 
 | Category | Example | sdrf-pipelines | rules.py | rules + LLM |
 |---|---|---|---|---|
@@ -71,30 +66,26 @@ corruptions; LLM run 3 times per file.
 | C: undetectable from the description (1) | two channels swapped | 0/1 | 0/1 | 0/1 |
 | Clean SDRF | | no error | no error | no findings in 3/3 runs |
 
-`sdrf-pipelines` checks format and ontology terms, not experimental design,
-so the comparison shows a division of labour, not a better validator. All 10
-LLM findings outside the corrupted column were reviewed by hand and were
-correct (`examples/benchmark/manual_review.md`). After a pilot run, one rule
-was added to the prompt to stop comments on formatting conventions.
+`sdrf-pipelines` checks format and ontology terms, not design, so this shows a
+division of labour, not a better validator. All 10 further LLM findings were
+checked by hand and were correct (`examples/benchmark/manual_review.md`).
 
 ### 2. Contrast drafting
 
 `contrasts.py` builds a cell-means design matrix, the four simple effects and
-the interaction, and classifies each contrast as within- or between-culture.
-Culture is a blocking factor (`duplicateCorrelation` in limma) rather than a
-fixed effect, because culture is nested in treatment. The LLM proposes which
-contrast is primary and which levels are references; code checks the proposal
-against `design.json`. Output: `examples/contrasts/`. The generated limma code
-has not been run on data.
+the interaction, and labels each as within- or between-culture. Culture is a
+blocking factor (`duplicateCorrelation` in limma), not a fixed effect,
+because it is nested in treatment. The LLM proposes the primary contrast and
+reference levels; code checks the proposal against `design.json`
+(`examples/contrasts/`). The generated limma code has not been run on data.
 
 ### 3. Post-run QC on simulated data
 
-`qc_simulate.py` simulates protein intensities for the 2 x 2 split-plot design
-with one planted problem per scenario; `qc_metrics.py` computes channel
-metrics (loading, correlation with same-antibody channels, PCA scores and
-their association with each factor), including a paired-ratio slope for each
-culture (log2 EZH2/IgG regressed on the other cultures), which drops under
-ratio compression and turns negative when the two channels of a culture are
+`qc_simulate.py` simulates the 2 x 2 split-plot design with one planted
+problem per scenario. `qc_metrics.py` computes channel metrics (loading,
+correlation with same-antibody channels, PCA scores and their association
+with each factor) and a paired-ratio slope per culture, which drops under
+ratio compression and turns negative when a culture's two channels are
 swapped. The LLM writes the report from the metrics alone (`qc_report.py`).
 
 | Scenario | Threshold baseline | LLM (3 runs) |
@@ -103,12 +94,10 @@ swapped. The LLM writes the report from the metrics alone (`qc_report.py`).
 | Low loading, ratio compression, outlier, label swap | channel flagged (no issue type) | correct type and channel 3/3 each |
 | Lower loading in all CPI-169 channels | missed (no single outlier) | 3/3 |
 
-The planted problems in four scenarios are large; ratio compression and the
-treatment-wide loading shift are the informative cases. On review, all three
-compression reports stated the direction of bias on the primary contrast
-(towards an apparent loss of EZH2-proximal proteins); two of three contained
-an incorrect secondary statement about mechanism
-(`examples/qc/manual_review.md`). One prompt rule was added after a pilot run.
+Most planted problems are large; ratio compression and the treatment-wide
+loading shift are the informative cases. All three compression reports gave
+the direction of bias on the primary contrast; two also made an incorrect
+statement about mechanism (`examples/qc/manual_review.md`).
 
 ### 4. Real quantms output (PXD000001)
 
@@ -117,160 +106,79 @@ with four proteins spiked at known amounts into a bacterial background.
 `quantms_qc.py` reads the MSstats input table and computes channel metrics and
 spike-in ratio recovery.
 
-- **QC found two nearly empty channels.** Channels 2 and 4 (TMT127, TMT129)
-  had 1 and 4 of 468 proteins quantified (robust z of median -34 and -27).
-- **Diagnosis.** The default reporter-ion extraction tolerance (0.002 Th) was
-  used. The pipeline option `--reporter_mass_shift` was recorded in the run
-  parameters but not passed to the OpenMS `IsobaricWorkflow` step. Passing
-  the option through `ext.args` (`configs/`) with 0.01 Th recovered both
-  channels (459-463 proteins in all channels). The IsobaricWorkflow log of
-  a later live run (with 0.01 Th) reports the reporter calibration directly: median m/z error about -0.0075
-  for 127 and 129 against about -0.0012 for the other four channels, an extra
-  offset of about 6.3 mDa on exactly the two failing channels. That is
-  larger than the default tolerance (0.002) and smaller than the fix (0.01),
-  and matches the 6.32 mDa difference between 13C- and 15N-based TMT reporter
-  isotopologues ([McAlister et al. 2012](https://pubmed.ncbi.nlm.nih.gov/22880955/)),
-  consistent with older TMT6 reagents. The reagent lot used for PXD000001
-  was not checked.
-- **Ratio compression.** Pooled spike-in slope 0.78 (1 = full recovery): a
-  true 10-fold difference was measured as about 6-fold. The quantms
-  parameter `isotope_correction` was false, but the OpenMS build in the
-  container applies isotope correction with its default TMT6 matrix anyway
-  (section 5), so this is the compression after a generic, not
-  lot-specific, correction.
+- **Two nearly empty channels.** TMT127 and TMT129 had 1 and 4 of 468
+  proteins quantified.
+- **Cause.** The pipeline option `--reporter_mass_shift` was recorded in the
+  run parameters but not passed to OpenMS `IsobaricWorkflow`, so the default
+  reporter tolerance (0.002 Th) was used. Passing 0.01 Th through `ext.args`
+  (`configs/`) recovered both channels (459-463 proteins in all channels).
+  The IsobaricWorkflow log shows why: the 127 and 129 reporters are offset by
+  about 6.3 mDa more than the other four channels, matching the 13C/15N
+  reporter isotopologue difference
+  ([McAlister et al. 2012](https://pubmed.ncbi.nlm.nih.gov/22880955/)) and
+  consistent with older TMT6 reagents (lot not checked).
+- **Ratio compression.** Pooled spike-in slope 0.78: a true 10-fold
+  difference is measured as about 6-fold, after the default (not
+  lot-specific) isotope correction.
 
 Full record: `examples/quantms_pxd000001_investigation.md`.
 
-**Blind LLM report** (`examples/real_qc_reports/`): the LLM received the
-metrics, SDRF, pipeline parameters and the quantification command, without
-being told what was wrong. Before the fix, 3/3 runs reported ch2 and ch4,
-mapped them to TMT127/TMT129 and ranked reporter-ion extraction tolerance
-first. After the fix (control), 3/3 runs reported only ratio compression; one
-also noticed the mismatch between the recorded parameter and the command.
-Weaknesses found on review: two runs proposed a global calibration offset,
-which cannot explain a failure of two channels only, and no run proposed the
-reagent explanation. The prompt was written after the diagnosis, and the
-dataset is widely discussed, so prior knowledge cannot be ruled out.
+**Blind LLM report** (`examples/real_qc_reports/`): given the metrics, SDRF,
+parameters and quantification command but not the problem, 3/3 runs reported
+ch2/ch4 as TMT127/TMT129 and ranked the reporter tolerance first; after the
+fix, 3/3 reported only ratio compression. Two runs also proposed a global
+calibration offset, which cannot explain a failure of two channels only.
 
 ### 5. Diagnose-rerun agent loop
 
-`diagnose_loop.py` automates the investigation in section 4. The model works
-through five tools: `get_qc` and `get_run_config` (metrics, flagged channels,
-parameters and the IsobaricWorkflow command, all computed or read by code),
-`request_rerun` (one change: pipeline parameters and/or `ext.args` for a
-process, with a stated hypothesis and expected effect), `compare_runs`
-(per-channel changes, flags, changed parameters and changed command
-arguments) and `finish`.
+`diagnose_loop.py` automates the investigation above. The model works through
+five tools: `get_qc`, `get_run_config`, `compare_runs` (all computed or read
+by code), `request_rerun` (one change to pipeline parameters or `ext.args`,
+with a hypothesis and expected effect) and `finish`. Code validates every
+rerun request (known parameters and processes, at most 3 reruns and 15 tool
+calls), sends it to the analyst for approval, flags channels itself, and
+checks the model's final status against those flags.
 
-Code keeps control of everything that can be checked:
+Reruns run on one of two backends:
 
-- Each rerun request is validated (known parameter names and process names,
-  at most 3 reruns, at most 15 tool calls) and then needs the analyst's
-  approval. A refused or unavailable rerun is returned to the model as
-  information.
-- Channels are flagged by code (fewer than half the median number of
-  quantified proteins, or |robust z of median| > 3).
-- When the model finishes, its status is checked against these flags: for
-  example, "resolved" while channels are still flagged, or without any
-  rerun, is recorded as a conflict.
+- **Replay**: serves only the two recorded runs (default, and fixed via
+  `ext.args`); anything else is refused. Used for repeated, auto-approved
+  trials.
+- **Live**: real `nextflow run bigbio/quantms -resume` from one launch folder,
+  so only changed steps are recomputed. Each rerun was approved or refused by
+  the analyst at the terminal.
 
-Reruns are executed by one of two backends:
+| Start | Replay (3 runs each) | Live |
+|---|---|---|
+| Default run (ch2, ch4 empty) | 3/3 found the `ext.args` fix, "resolved" | 1/1 found it in one rerun (result from the Nextflow cache of the manual run) |
+| Fixed run (control) | 3/3 no channel problem, compression "unresolved" | 2/2 the same |
 
-- **Replay** (used for the replayed runs): returns only runs that were actually executed. For
-  PXD000001 these are the default run and the run with
-  `-extraction:reporter_mass_shift 0.01` passed through `ext.args`. Changing
-  only the `reporter_mass_shift` pipeline parameter returns the default run
-  again, with the IsobaricWorkflow command unchanged, as observed in quantms
-  1.10.0. Any other request is refused as not available in replay mode.
-  File names and output folders that would hint at the fix are not shown to
-  the model.
-- **Nextflow** (live): every run, including the first, is a real
-  `nextflow run bigbio/quantms -r 1.10.0 -resume` from one launch folder,
-  with its own output folder, an `ext.args` config and the parameter
-  overrides accumulated from the base run, so only steps whose inputs
-  changed are rerun. In quantms 1.10.0, `isotope_correction` has an effect
-  only when `plex_corr_matrix_file` is also set (checked in the module
-  source); quantms's bundled correction matrices are copied into the launch
-  folder and listed for the model. Used for the live runs below. (What
-  OpenMS then does with these options is a separate question; see the end
-  of this section.)
+The model's final status matched the code's flags in every run. Reviews:
+`examples/diagnose_loop/`, `examples/diagnose_loop_live/` (each with a
+`manual_review.md`); a pilot round that exposed a replay bug is in
+`examples/diagnose_loop_pilot/`.
 
-The tests drive the loop with a scripted model through the
-manual path of section 4 (the parameter change has no effect; the `ext.args`
-change clears both flagged channels) and through refused, invalid,
-unavailable and over-budget requests, and status conflicts.
+What the reviews showed:
 
-**LLM runs** (`examples/diagnose_loop/`, 3 runs from each start, reruns
-auto-approved):
-
-| Start | Outcome | Reruns | Code check |
-|---|---|---|---|
-| Default run (ch2, ch4 nearly empty) | 3/3 found the `ext.args` fix and finished "resolved"; 2/3 took the manual path (parameter first, no effect, then `ext.args`) | 1-2 | consistent 3/3 |
-| Fixed run (control) | 3/3 reported no channel problem and left the ratio compression unresolved (proposed reruns not available in replay) | 1 served | consistent 3/3 |
-
-On review (`examples/diagnose_loop/manual_review.md`):
-
-- From the default run, two runs proposed that the 127/129 reporters are
-  offset by an isotopologue mass difference, which matches the reagent
-  explanation above; none of the blind QC reports had. All three also kept
-  instrument calibration as a candidate, which cannot explain a failure of
-  two channels only.
-- All three control runs asked to revert the `ext.args` override on weak
-  reasoning, which broke ch2 and ch4 again. All three then concluded that
-  the override is needed and named the fixed run as final. With live
-  reruns, the approval gate is where such a request would be stopped.
-- A pilot round (`examples/diagnose_loop_pilot/`) exposed a replay bug,
-  fixed before these runs. One replay artefact found in these runs (an
-  explicit default argument missing from the replayed command) affected one
-  remaining-issue statement and was fixed afterwards.
-
-**Live runs** (`examples/diagnose_loop_live/`, 1 run from the default start
-and 2 from the fixed start, every rerun decided by the analyst at the
-terminal; review in `examples/diagnose_loop_live/manual_review.md`):
-
-- From the default run: one rerun with the `ext.args` fix, "resolved",
-  consistent with the code check. The fixed step came from the Nextflow
-  cache of the manual investigation (`ISOBARIC_WORKFLOW` reported as
-  `CACHED`), so it was not recomputed.
-- From the fixed run: three reruns, "unresolved", fixed run kept as final.
-  `min_precursor_purity` 0.7 was computed fresh and changed nothing
-  (explained below). `isotope_correction` alone left the command unchanged, which
-  the model noticed, but it did not identify that `plex_corr_matrix_file` is
-  also required; the bundled matrices had not been listed for it because of
-  a bug in the backend, since fixed. The third rerun, approved by the
-  analyst, reverted the fix as in the replayed controls and broke ch2 and
-  ch4 again; the model then kept the fixed run.
-- From the fixed run, after the fix (matrices listed): the model found the
-  `plex_corr_matrix_file` dependency itself after `isotope_correction` alone
-  left the command unchanged, and supplied the bundled TMT6 matrix. The
-  analyst refused a repeat of the purity test and the revert of the fix;
-  the model did not ask again and kept the fix in its conclusion.
-
-**Why the purity filter and the isotope correction changed nothing.** Both
-changes reached the IsobaricWorkflow command but left every metric
-unchanged. The MSstats input tables of the fixed run, the
-isotope-correction run without a matrix and the run with the matrix are
-byte-identical (same md5), and so are the reporter intensities (`it`
-attributes) in the IsobaricWorkflow consensusXML of the fixed run and the
-run with the matrix; only metadata differ. The OpenMS source of the build in
-the container (IsobaricWorkflow 3.6.0-pre-HEAD-2026-07-02, commit 266ee85) explains
-both:
-
-- IsobaricWorkflow applies the NNLS isotope correction to every spectrum
-  unconditionally, with the method's correction matrix. The default TMT6
-  matrix is identical, value for value, to quantms's bundled
-  `tmt6plex_default_correction.matrix`, which is the one the model
-  supplied. So the correction was on in every run, with the same matrix.
-  quantms's `isotope_correction=false` does not turn it off; it only omits
-  the matrix argument. (Later OpenMS versions check
-  `quantification:isotope_correction` before correcting.)
-- `min_precursor_purity` is applied only in
-  `IsobaricChannelExtractor::extractChannels`, the path used by
-  IsobaricAnalyzer. IsobaricWorkflow calls `extractSingleSpec`, which
-  annotates purity but does not filter on it.
-
-This also corrects a statement repeated by the blind QC reports, all agent
-runs and earlier versions of this README: isotope correction was not off.
+- **Diagnosis.** Two of three replayed runs took the manual path (parameter
+  first, no effect, then `ext.args`); two proposed the isotopologue offset,
+  which no blind report had. All three also listed instrument calibration
+  (ranked lower), which cannot explain a failure of two channels only.
+- **Bad requests, and the approval gate.** In every control run, replayed
+  or live, the model asked to revert the fix on weak reasoning. Where it was
+  executed, ch2 and ch4 failed again and the model then kept the fix. In the
+  last live run the analyst refused it, and the model did not ask again.
+- **A second ignored option.** In quantms 1.10.0, `isotope_correction` has
+  no effect unless `plex_corr_matrix_file` is also set. After the command
+  stayed unchanged, the model inferred this and supplied the matrix.
+- **Its limit.** Neither isotope correction nor `min_precursor_purity` 0.7
+  changed any metric; the MSstats tables and reporter intensities were
+  identical. The OpenMS source of the build used (IsobaricWorkflow
+  3.6.0-pre, 2 July 2026) explains why: it always applies isotope
+  correction with the default TMT6 matrix (the same matrix the model
+  supplied), and it never applies the purity filter. The model correctly
+  saw "no effect" but, like every report before it, assumed that correction
+  was off, because that is what the pipeline parameter said.
 
 ## Repository layout
 
@@ -288,8 +196,8 @@ tests/            103 tests; none calls the API
 ## Reproduce
 
 Requires [uv](https://docs.astral.sh/uv/). LLM steps need an Anthropic API key
-in `.env` (`ANTHROPIC_API_KEY=...`); the model can be set with
-`TMT_AGENTS_MODEL` (results here: `claude-sonnet-5-5`).
+in `.env` (`ANTHROPIC_API_KEY=...`); the model is set with `TMT_AGENTS_MODEL`
+(results here: `claude-sonnet-5-5`).
 
 ```bash
 uv sync
@@ -312,11 +220,10 @@ uv run python scripts/run_qc_benchmark.py         # add --no-llm to skip API cal
 uv run python scripts/check_quantms_output.py data/quantms_pxd000001/msstats_in_shift0.01.csv.gz examples/quantms_pxd000001_shift0.01
 uv run python scripts/run_real_qc_report.py data/quantms_pxd000001 shift0.002 examples/real_qc_reports --runs 3
 
-# 5. Diagnose-rerun loop (replay); without --auto-approve each rerun is approved at the terminal
+# 5. Agent loop, replay (--start shift0.01 for the control)
 uv run python scripts/run_diagnose_loop.py data/quantms_pxd000001 examples/diagnose_loop --start shift0.002 --runs 3 --auto-approve
-uv run python scripts/run_diagnose_loop.py data/quantms_pxd000001 examples/diagnose_loop --start shift0.01 --runs 3 --auto-approve
-# live (Nextflow + Docker), launched from the folder of an earlier quantms run to reuse its cache;
-# the config must not contain the ext.args fix (here: only resourceLimits)
+# live (Nextflow + Docker): launch from the folder of an earlier quantms run to reuse its cache;
+# the config must not contain the ext.args fix
 uv run python scripts/run_diagnose_loop.py data/quantms_pxd000001 examples/diagnose_loop_live --start shift0.002 \
   --live ~/quantms_test --nf-config ~/quantms_test/small_base.config \
   --nf-param root_folder=/home/ubuntu/pxd000001 --nf-param local_input_type=raw
@@ -331,34 +238,29 @@ nextflow run bigbio/quantms -r 1.10.0 -profile test_tmt,docker \
 
 ## Limitations
 
-- Benchmarks are small and were designed by the same person who built the
-  system; two prompt rules were added after pilot runs, so the final runs are
-  not fully held out.
-- LLM outputs vary between runs; each benchmark used 3 runs. Classifications
-  and main impact statements were reliable; secondary mechanistic statements
-  were not always correct.
-- Contrast drafting supports 2 x 2 designs with one within-unit factor.
-- quantms 1.10.0 also writes results in the qpx format; only the MSstats
-  input table is read.
-- In replay mode the agent loop can reach only two recorded runs, so it
-  tests whether the model finds and verifies the known fix, not open-ended
-  troubleshooting. Its system prompt was written after the manual
-  diagnosis, and reruns in the replayed runs were auto-approved. Only three
-  live runs were made, and the live fix came from the Nextflow cache.
+- Benchmarks are small and were designed by the person who built the system;
+  prompt rules were added after pilot runs, so final runs are not fully held
+  out.
+- LLM outputs vary; each benchmark used 3 runs. Classifications and main
+  impact statements were reliable; secondary statements about mechanism were
+  not always correct.
+- The PXD000001 reports and the agent loop were tested on one dataset with a
+  known fix: the prompts were written after the manual diagnosis, PXD000001
+  is widely discussed, and replay can reach only two recorded runs. Only
+  three live runs were made.
+- Contrast drafting supports 2 x 2 designs with one within-unit factor; only
+  the MSstats input table of quantms is read.
 
 ## Next steps
 
-- Report to quantms: `reporter_mass_shift` is not passed to
-  IsobaricWorkflow, and `isotope_correction` / `min_precursor_purity` do not
-  control what the bundled IsobaricWorkflow does.
-- Use a lot-specific correction matrix (if the PXD000001 kit lot can be
-  found) to see how much of the ratio compression is channel crosstalk.
-- Give the agent the IsobaricWorkflow log as a tool: its reporter
-  calibration statistics show the 127/129 offset directly.
 - Apply to the thesis data once available.
-- Detection-strength curves (vary the size of planted problems).
-- An automatic check that every number quoted in an LLM report appears in the
-  metrics.
+- Report to quantms: `reporter_mass_shift` is not passed to IsobaricWorkflow,
+  and `isotope_correction` and `min_precursor_purity` do not control what it
+  does.
+- Give the agent the IsobaricWorkflow log as a tool (its calibration
+  statistics show the 127/129 offset directly).
+- Detection-strength curves (vary the size of planted problems), and an
+  automatic check that every number in an LLM report appears in the metrics.
 
 Developed with the help of an AI coding assistant (Claude). All runs,
 benchmarks and manual reviews were carried out and checked by the author.
