@@ -20,13 +20,15 @@ Two ways to execute a rerun:
   reproduces (the `reporter_mass_shift` pipeline parameter is recorded but
   does not reach OpenMS IsobaricWorkflow, so the cached step is reused) was
   observed in quantms 1.10.0; see `examples/quantms_pxd000001_investigation.md`.
-- `NextflowBackend` runs quantms with `-resume` and an `ext.args` config.
-  It needs Nextflow and Docker and has not been executed in this repository.
+- `NextflowBackend` runs quantms with `-resume`, one output folder per run,
+  with an `ext.args` config and accumulated parameter overrides. It needs
+  Nextflow and Docker.
 """
 
 from __future__ import annotations
 
 import json
+import os
 import shlex
 import subprocess
 from collections import Counter
@@ -73,6 +75,7 @@ class Run:
     ext_args: dict[str, str] = field(default_factory=dict)
     note: str = ""    # shown to the model
     source: str = ""  # transcript only (e.g. which recorded run was replayed)
+    overrides: dict = field(default_factory=dict)  # pipeline parameters set on the command line
 
 
 @dataclass
@@ -230,19 +233,39 @@ class ReplayBackend:
                 "This change would have to be run in live mode.")
 
 
-class NextflowBackend:
-    """Run quantms with Nextflow (-resume). Not executed in this repository."""
+Runner = Callable[[list[str], Path, Path], int]
 
-    def __init__(self, workdir: Path, initial: Run, pipeline: str = "bigbio/quantms",
-                 revision: str = "1.10.0", profile: str = "test_tmt,docker",
-                 base_config: str = "process { resourceLimits = [cpus: 2, memory: 7.GB, time: 12.h] }"):
-        self.workdir = Path(workdir)
-        self._initial = initial
+
+def _run_logged(cmd: list[str], cwd: Path, log: Path) -> int:
+    """Run a command, writing its output to a log file; return the exit code."""
+    with open(log, "w", encoding="utf-8") as fh:
+        return subprocess.run(cmd, cwd=cwd, stdout=fh, stderr=subprocess.STDOUT).returncode
+
+
+class NextflowBackend:
+    """Run quantms with Nextflow and -resume, one output folder per run.
+
+    Every run (including run0) is launched from `workdir`, so later runs reuse
+    the cached tasks of earlier ones and only the steps whose inputs changed
+    are rerun. Pipeline parameter overrides and ext.args accumulate from the
+    base run. Needs Nextflow and Docker on the machine.
+    """
+
+    def __init__(self, workdir: Path, initial_ext_args: dict[str, str] | None = None,
+                 pipeline: str = "bigbio/quantms", revision: str = "1.10.0",
+                 profile: str = "test_tmt,docker",
+                 base_config: str = "process { resourceLimits = [cpus: 2, memory: 7.GB, time: 12.h] }",
+                 runner: Runner = _run_logged, log_reader: Callable[[str, Path], str] | None = None):
+        self.workdir = Path(workdir).resolve()
+        self.workdir.mkdir(parents=True, exist_ok=True)
+        self.initial_ext_args = dict(initial_ext_args or {})
         self.pipeline, self.revision, self.profile = pipeline, revision, profile
         self.base_config = base_config
+        self.runner = runner
+        self.log_reader = log_reader or self._nextflow_log
+        self.stamp = pd.Timestamp.now().strftime("%Y%m%d%H%M%S")
 
-    def initial_run(self) -> Run:
-        return self._initial
+    # -- helpers -------------------------------------------------------------
 
     def config_text(self, ext_args: dict[str, str]) -> str:
         lines = [self.base_config, "process {"]
@@ -251,37 +274,78 @@ class NextflowBackend:
         lines.append("}")
         return "\n".join(lines) + "\n"
 
-    def command(self, params: dict, config_path: Path, outdir: str) -> list[str]:
+    def command(self, overrides: dict, config_path: Path, outdir: str, name: str) -> list[str]:
         cmd = ["nextflow", "run", self.pipeline, "-r", self.revision, "-profile", self.profile,
-               "-resume", "-c", str(config_path), "--outdir", outdir]
-        for k, v in params.items():
+               "-name", name, "-resume", "-c", str(config_path), "--outdir", outdir]
+        for k, v in overrides.items():
             cmd += [f"--{k}", str(v).lower() if isinstance(v, bool) else str(v)]
         return cmd
 
-    def rerun(self, base: Run, request: RerunRequest, run_id: str) -> Run | str:
-        ext_args = {**base.ext_args, **request.ext_args}
-        cfg = self.workdir / f"{run_id}.config"
+    @staticmethod
+    def _nextflow_log(name: str, cwd: Path) -> str:
+        return subprocess.run(["nextflow", "log", name, "-f", "name,workdir"], cwd=cwd,
+                              capture_output=True, text=True).stdout
+
+    def available_files(self) -> list[str]:
+        """Matrix files the model may point plex_corr_matrix_file to."""
+        return sorted(str(p.relative_to(self.workdir)) for p in (self.workdir / "assets").glob("*.matrix"))
+
+    def _stage_assets(self) -> None:
+        """Copy quantms's bundled correction matrices into the launch folder.
+
+        quantms reads plex_corr_matrix_file with a plain File(), relative to
+        the launch folder, as in its own test_tmt_corr profile.
+        """
+        assets_root = Path(os.environ.get("NXF_ASSETS", Path.home() / ".nextflow" / "assets"))
+        src = assets_root / self.pipeline / "assets"
+        dest = self.workdir / "assets"
+        for f in src.glob("*.matrix"):
+            dest.mkdir(exist_ok=True)
+            if not (dest / f.name).exists():
+                (dest / f.name).write_bytes(f.read_bytes())
+
+    def _launch(self, run_id: str, overrides: dict, ext_args: dict[str, str]) -> Run | str:
+        name = f"agent_{self.stamp}_{run_id}"
+        cfg = self.workdir / f"{name}.config"
         cfg.write_text(self.config_text(ext_args), encoding="utf-8")
-        outdir = f"results_{run_id}"
-        proc = subprocess.run(self.command(request.param_changes, cfg, outdir),
-                              cwd=self.workdir, capture_output=True, text=True)
-        if proc.returncode != 0:
-            return f"Nextflow failed (exit {proc.returncode}): {proc.stderr[-2000:]}"
+        outdir = f"results_{name}"
+        log = self.workdir / f"{name}.log"
+        code = self.runner(self.command(overrides, cfg, outdir, name), self.workdir, log)
+        if code != 0:
+            tail = log.read_text(encoding="utf-8", errors="replace")[-3000:] if log.exists() else ""
+            return f"Nextflow failed (exit {code}). End of log:\n{tail}"
         out = self.workdir / outdir
-        msstats = next(out.glob("quant_tables/*msstats_in.csv"), None)
+        msstats = next(iter(sorted(out.glob("quant_tables/*msstats_in.csv"))), None)
         params_file = max(out.glob("pipeline_info/params_*.json"), default=None)
-        log = subprocess.run(["nextflow", "log", "last", "-f", "name,workdir"],
-                             cwd=self.workdir, capture_output=True, text=True).stdout
-        task_dir = next((line.split("\t")[1] for line in log.splitlines()
-                         if "ISOBARIC_WORKFLOW" in line), None)
+        task_dir = next((line.split("\t")[1].strip() for line in self.log_reader(name, self.workdir).splitlines()
+                         if "ISOBARIC_WORKFLOW" in line and "\t" in line), None)
         if not (msstats and params_file and task_dir):
-            return "Run finished but its MSstats table, parameters or IsobaricWorkflow command were not found."
-        command = (Path(task_dir) / ".command.sh").read_text()
-        note = f"rerun of {base.run_id}"
-        if command_tokens(command) == command_tokens(base.command):
-            note += "; ISOBARIC_WORKFLOW command unchanged (cached task reused)"
-        return Run(run_id, msstats, json.loads(params_file.read_text()), command, ext_args,
-                   note, source=f"live run in {outdir}")
+            return (f"Run finished but outputs were not found (MSstats table: {msstats}, "
+                    f"parameters: {params_file}, IsobaricWorkflow task folder: {task_dir}).")
+        command = (Path(task_dir) / ".command.sh").read_text(encoding="utf-8")
+        return Run(run_id, msstats, json.loads(params_file.read_text(encoding="utf-8")), command,
+                   dict(ext_args), source=f"live run {name}, outputs in {outdir}", overrides=dict(overrides))
+
+    # -- Backend interface ---------------------------------------------------
+
+    def initial_run(self) -> Run:
+        result = self._launch("run0", {}, self.initial_ext_args)
+        if isinstance(result, str):
+            raise RuntimeError(f"Initial quantms run failed: {result}")
+        result.note = "first run"
+        self._stage_assets()
+        return result
+
+    def rerun(self, base: Run, request: RerunRequest, run_id: str) -> Run | str:
+        overrides = {**base.overrides, **request.param_changes}
+        ext_args = {k: v for k, v in {**base.ext_args, **request.ext_args}.items() if v.strip()}
+        result = self._launch(run_id, overrides, ext_args)
+        if isinstance(result, str):
+            return result
+        result.note = f"rerun of {base.run_id}"
+        if command_tokens(result.command) == command_tokens(base.command):
+            result.note += "; ISOBARIC_WORKFLOW command unchanged (Nextflow reused the cached task)"
+        return result
 
 
 # ---------------------------------------------------------------------------
@@ -441,9 +505,12 @@ class DiagnoseLoop:
         if err := self._need(run_id):
             return err
         r = self.runs[run_id]
+        files = getattr(self.backend, "available_files", lambda: [])()
+        extra = (f"\n\nFiles in the launch folder that parameters may point to: {files}"
+                 if files else "")
         return (f"Run {run_id} ({r.note})\next.args overrides: {r.ext_args or 'none'}\n\n"
                 f"Pipeline parameters:\n{json.dumps(r.params, indent=1)}\n\n"
-                f"IsobaricWorkflow command:\n{r.command}")
+                f"IsobaricWorkflow command:\n{r.command}{extra}")
 
     def tool_compare_runs(self, run_a: str, run_b: str) -> str:
         if err := self._need(run_a, run_b):

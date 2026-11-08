@@ -1,12 +1,25 @@
-"""Run the diagnose-rerun agent loop on PXD000001 (replay of recorded quantms runs).
+"""Run the diagnose-rerun agent loop on PXD000001.
 
-The model starts from the run with the default reporter-ion tolerance
-('shift0.002') and may request reruns; replay mode can only return runs that
-were actually executed ('shift0.002', 'shift0.01').
+Two backends:
+
+- replay (default): reruns are answered from the recorded quantms runs in
+  data_dir ('shift0.002', 'shift0.01'); anything else is refused.
+- live (--live WORKDIR): every run, including the first, is a real
+  `nextflow run bigbio/quantms -r 1.10.0 -profile test_tmt,docker -resume`
+  launched from WORKDIR. Needs Nextflow and Docker. Launch from the folder
+  of an earlier quantms run (the one with `.nextflow/` and `work/`) to reuse
+  its cached tasks.
+
+--start picks the first run: 'shift0.002' (default reporter tolerance) or
+'shift0.01' (with -extraction:reporter_mass_shift 0.01 passed via ext.args).
 
 Usage (from the repository root):
+    # replay
     uv run python scripts/run_diagnose_loop.py data/quantms_pxd000001 \
         examples/diagnose_loop --start shift0.002 --runs 3 --auto-approve
+    # live, approving each rerun at the terminal
+    uv run python scripts/run_diagnose_loop.py data/quantms_pxd000001 \
+        examples/diagnose_loop_live --start shift0.002 --live ~/quantms_runs
 
 Without --auto-approve, each rerun request is shown and must be approved at
 the terminal. --auto-approve stands in for the analyst in benchmark runs and
@@ -20,7 +33,13 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from tmt_agents.design_check import default_model
-from tmt_agents.diagnose_loop import DiagnoseLoop, ReplayBackend, RerunRequest, format_transcript
+from tmt_agents.diagnose_loop import (
+    DiagnoseLoop,
+    NextflowBackend,
+    ReplayBackend,
+    RerunRequest,
+    format_transcript,
+)
 
 # Recorded quantms runs and the ext.args each was made with.
 RECORDED = {
@@ -34,7 +53,8 @@ def ask_analyst(req: RerunRequest) -> tuple[bool, str]:
     print(f"  from: {req.base_run}\n  parameters: {req.param_changes}\n  ext.args: {req.ext_args}")
     print(f"  hypothesis: {req.hypothesis}\n  expected: {req.expected_change}")
     answer = input("Approve? [y/N] (optionally followed by a note): ").strip()
-    return answer.lower().startswith("y"), answer[1:].strip()
+    first, _, note = answer.partition(" ")
+    return first.lower().startswith("y"), note.strip()
 
 
 def auto_approve(req: RerunRequest) -> tuple[bool, str]:
@@ -48,6 +68,8 @@ def main() -> None:
     parser.add_argument("--start", default="shift0.002", choices=list(RECORDED))
     parser.add_argument("--runs", type=int, default=1)
     parser.add_argument("--auto-approve", action="store_true")
+    parser.add_argument("--live", type=Path, metavar="WORKDIR",
+                        help="run quantms for real, launched from WORKDIR")
     args = parser.parse_args()
 
     load_dotenv()
@@ -55,18 +77,24 @@ def main() -> None:
     client = anthropic.Anthropic()
     approver = auto_approve if args.auto_approve else ask_analyst
     args.out_dir.mkdir(parents=True, exist_ok=True)
+    mode = "live" if args.live else "replay"
 
     for k in range(1, args.runs + 1):
-        backend = ReplayBackend(args.data_dir, args.start, RECORDED)
+        if args.live:
+            print(f"Starting the first quantms run in {args.live} (can take about 25 min "
+                  "unless cached)...")
+            backend = NextflowBackend(args.live, initial_ext_args=RECORDED[args.start])
+        else:
+            backend = ReplayBackend(args.data_dir, args.start, RECORDED)
         result = DiagnoseLoop(backend, approver, client).run()
-        stem = f"start_{args.start}_run{k}"
+        stem = f"{'live_' if args.live else ''}start_{args.start}_run{k}"
         (args.out_dir / f"{stem}.json").write_text(json.dumps(
-            {"model": default_model(), "start": args.start, "auto_approve": args.auto_approve,
-             "finish": result.finish, "runs": result.runs, "code_check": result.code_check,
-             "events": result.events}, indent=2), encoding="utf-8")
+            {"model": default_model(), "backend": mode, "start": args.start,
+             "auto_approve": args.auto_approve, "finish": result.finish, "runs": result.runs,
+             "code_check": result.code_check, "events": result.events}, indent=2), encoding="utf-8")
         (args.out_dir / f"{stem}.md").write_text(format_transcript(
-            result, f"Diagnose-rerun loop (start {args.start}, run {k}, model `{default_model()}`)"),
-            encoding="utf-8")
+            result, f"Diagnose-rerun loop ({mode}, start {args.start}, run {k}, "
+                    f"model `{default_model()}`)"), encoding="utf-8")
         n_calls = sum(e["event"] == "tool_call" for e in result.events)
         status = result.finish["status"] if result.finish else None
         print(f"run {k}: status={status}; runs={result.runs}; tool calls={n_calls}; "

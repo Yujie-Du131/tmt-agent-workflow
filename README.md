@@ -176,8 +176,15 @@ Reruns are executed by one of two backends:
   1.10.0. Any other request is refused as not available in replay mode.
   File names and output folders that would hint at the fix are not shown to
   the model.
-- **Nextflow** (live): writes an `ext.args` config and reruns quantms with
-  `-resume`. Written but not executed in this repository.
+- **Nextflow** (live): every run, including the first, is a real
+  `nextflow run bigbio/quantms -r 1.10.0 -resume` from one launch folder,
+  with its own output folder, an `ext.args` config and the parameter
+  overrides accumulated from the base run, so only steps whose inputs
+  changed are rerun. In quantms 1.10.0, `isotope_correction` has an effect
+  only when `plex_corr_matrix_file` is also set (checked in the module
+  source); quantms's bundled correction matrices are copied into the launch
+  folder and listed for the model. Tested against a fake `nextflow` in the
+  tests; not yet run for real.
 
 The tests drive the loop with a scripted model through the
 manual path of section 4 (the parameter change has no effect; the `ext.args`
@@ -218,7 +225,7 @@ scripts/          command-line entry points (one per step)
 data/             own_design/, corrupted_sdrf/, simulated_qc/, quantms_pxd000001/
 examples/         outputs, benchmark results and manual reviews
 configs/          Nextflow config used for the fixed quantms run
-tests/            98 tests; none calls the API
+tests/            101 tests; none calls the API
 ```
 
 ## Reproduce
@@ -251,6 +258,8 @@ uv run python scripts/run_real_qc_report.py data/quantms_pxd000001 shift0.002 ex
 # 5. Diagnose-rerun loop (replay); without --auto-approve each rerun is approved at the terminal
 uv run python scripts/run_diagnose_loop.py data/quantms_pxd000001 examples/diagnose_loop --start shift0.002 --runs 3 --auto-approve
 uv run python scripts/run_diagnose_loop.py data/quantms_pxd000001 examples/diagnose_loop --start shift0.01 --runs 3 --auto-approve
+# live (Nextflow + Docker), launched from the folder of an earlier quantms run to reuse its cache
+uv run python scripts/run_diagnose_loop.py data/quantms_pxd000001 examples/diagnose_loop_live --start shift0.002 --live ~/quantms_runs
 ```
 
 The quantms run itself (Nextflow, Docker; about 25 min on 2 vCPU / 8 GB):

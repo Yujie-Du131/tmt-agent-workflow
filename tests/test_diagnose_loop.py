@@ -3,16 +3,18 @@
 The replay backend is run on the recorded PXD000001 quantms outputs.
 """
 
+import json
+import os
 from pathlib import Path
 from types import SimpleNamespace
 
+import pandas as pd
 import pytest
 
 from tmt_agents.diagnose_loop import (
     DiagnoseLoop,
     NextflowBackend,
     ReplayBackend,
-    Run,
     command_diff,
     compute_qc,
 )
@@ -169,14 +171,94 @@ def test_command_diff_detects_added_option():
 
 
 def test_nextflow_backend_builds_config_and_command(tmp_path):
-    initial = Run("run0", tmp_path / "x.csv", {}, "")
-    nf = NextflowBackend(tmp_path, initial)
+    nf = NextflowBackend(tmp_path, runner=lambda *a: 0)
     cfg = nf.config_text(FIX)
     assert "withName: '.*:ISOBARIC_WORKFLOW' { ext.args = \"-extraction:reporter_mass_shift 0.01\" }" in cfg
-    cmd = nf.command({"isotope_correction": True}, tmp_path / "run1.config", "results_run1")
+    cmd = nf.command({"isotope_correction": True}, tmp_path / "run1.config", "results_run1", "agent_x_run1")
     assert cmd[:6] == ["nextflow", "run", "bigbio/quantms", "-r", "1.10.0", "-profile"]
-    assert "-resume" in cmd and cmd[-2:] == ["--isotope_correction", "true"]
+    assert "-resume" in cmd and cmd[cmd.index("-name") + 1] == "agent_x_run1"
+    assert cmd[-2:] == ["--isotope_correction", "true"]
 
+
+class FakeNextflow:
+    """Stands in for `nextflow run`: writes outputs from the recorded runs.
+
+    The output depends only on the ext.args in the config (as for quantms
+    1.10.0 with the parameters used here); the IsobaricWorkflow command is the
+    recorded one plus the ext.args.
+    """
+
+    def __init__(self, root, fail=False):
+        self.root, self.fail, self.commands, self.task_dirs = root, fail, [], {}
+
+    def __call__(self, cmd, cwd, log):
+        self.commands.append(cmd)
+        log.write_text("nextflow log\n")
+        if self.fail:
+            return 1
+        name = cmd[cmd.index("-name") + 1]
+        outdir = Path(cwd) / cmd[cmd.index("--outdir") + 1]
+        fixed = "reporter_mass_shift 0.01" in Path(cmd[cmd.index("-c") + 1]).read_text()
+        tag = "shift0.01" if fixed else "shift0.002"
+        (outdir / "quant_tables").mkdir(parents=True)
+        (outdir / "pipeline_info").mkdir()
+        df = pd.read_csv(DATA / f"msstats_in_{tag}.csv.gz")
+        df.to_csv(outdir / "quant_tables" / "PXD000001_msstats_in.csv", index=False)
+        params = json.loads((DATA / "params_shift0.002.json").read_text())
+        i = cmd.index("--outdir") + 2
+        while i < len(cmd):
+            params[cmd[i][2:]] = cmd[i + 1]
+            i += 2
+        (outdir / "pipeline_info" / "params_2026.json").write_text(json.dumps(params))
+        task = Path(cwd) / "work" / ("fixed" if fixed else "default")
+        task.mkdir(parents=True, exist_ok=True)
+        (task / ".command.sh").write_text((DATA / f"isobaric_command_{tag}.sh").read_text())
+        self.task_dirs[name] = task
+        return 0
+
+    def log(self, name, cwd):
+        return f"BIGBIO_QUANTMS:QUANTMS:TMT:ISOBARIC_WORKFLOW (PXD000001)\t{self.task_dirs[name]}\n"
+
+
+def test_live_backend_with_fake_nextflow(tmp_path):
+    fake = FakeNextflow(tmp_path)
+    backend = NextflowBackend(tmp_path, runner=fake, log_reader=fake.log)
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "assets" / "tmt6plex_default_correction.matrix").write_text("x")
+    client = ScriptedClient([
+        ("get_run_config", {"run_id": "run0"}),
+        rerun("run0", params={"reporter_mass_shift": 0.01}),
+        rerun("run0", ext=FIX),
+        rerun("run2", params={"min_precursor_purity": 0.5}),
+        ("compare_runs", {"run_a": "run0", "run_b": "run2"}),
+        finish("resolved", "run3"),
+    ])
+    loop = DiagnoseLoop(backend, Approver(), client, model="test")
+    result = loop.run()
+    assert "assets/tmt6plex_default_correction.matrix" in client.last_result(1)
+    assert "command unchanged" in loop.runs["run1"].note
+    assert compute_qc(loop.runs["run2"]).flagged == []
+    run3_cmd = fake.commands[3]
+    assert run3_cmd[-2:] == ["--min_precursor_purity", "0.5"]  # overrides accumulate from run2
+    assert "reporter_mass_shift 0.01" in Path(run3_cmd[run3_cmd.index("-c") + 1]).read_text()
+    assert loop.runs["run3"].overrides == {"min_precursor_purity": 0.5}
+    assert result.code_check["status_consistent"] is True
+    assert "run2=none" in client.last_result(5)
+
+
+def test_live_backend_failure_is_reported(tmp_path):
+    ok, failing = FakeNextflow(tmp_path), FakeNextflow(tmp_path, fail=True)
+
+    def runner(cmd, cwd, log):  # run0 succeeds, every rerun fails
+        name = cmd[cmd.index("-name") + 1]
+        return ok(cmd, cwd, log) if name.endswith("_run0") else failing(cmd, cwd, log)
+
+    backend = NextflowBackend(tmp_path, runner=runner, log_reader=ok.log)
+    client = ScriptedClient([rerun("run0", ext=FIX), finish("unresolved", "run0")])
+    result = DiagnoseLoop(backend, Approver(), client, model="test").run()
+    assert result.runs == ["run0"]
+    assert any(e["event"] == "rerun_unavailable" and "Nextflow failed (exit 1)" in e["reason"]
+               for e in result.events)
 
 def test_reply_without_tool_call_is_nudged():
     loop, client = make_loop([("text", "Let me think."), finish("unresolved", "run0")])
@@ -228,3 +310,54 @@ def test_param_change_from_fixed_run_keeps_fix():
     loop.run()
     assert compute_qc(loop.runs["run1"]).flagged == []
     assert "cached" in loop.runs["run1"].note
+
+
+FAKE_NEXTFLOW = r'''#!/usr/bin/env python3
+"""Fake `nextflow` executable for tests: `run` writes outputs, `log` lists the task."""
+import gzip, json, shutil, sys
+from pathlib import Path
+DATA = Path(sys.argv[0]).parent / "data"
+args = sys.argv[1:]
+state = Path(".fake_nf.json")
+tasks = json.loads(state.read_text()) if state.exists() else {}
+if args[0] == "log":
+    print(f"BIGBIO_QUANTMS:QUANTMS:TMT:ISOBARIC_WORKFLOW (PXD000001)\t{tasks[args[1]]}")
+    sys.exit(0)
+name, out = args[args.index("-name") + 1], Path(args[args.index("--outdir") + 1])
+tag = "shift0.01" if "0.01" in Path(args[args.index("-c") + 1]).read_text() else "shift0.002"
+(out / "quant_tables").mkdir(parents=True)
+(out / "pipeline_info").mkdir()
+with gzip.open(DATA / f"msstats_in_{tag}.csv.gz") as src, open(out / "quant_tables" / "x_msstats_in.csv", "wb") as dst:
+    shutil.copyfileobj(src, dst)
+shutil.copy(DATA / f"params_{tag}.json", out / "pipeline_info" / "params_1.json")
+task = Path("work") / tag
+task.mkdir(parents=True, exist_ok=True)
+shutil.copy(DATA / f"isobaric_command_{tag}.sh", task / ".command.sh")
+tasks[name] = str(task.resolve())
+state.write_text(json.dumps(tasks))
+print("fake nextflow done")
+'''
+
+
+def test_live_backend_with_fake_executable(tmp_path, monkeypatch):
+    """Exercises the real subprocess path (run, log file, `nextflow log` parsing)."""
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    exe = bindir / "nextflow"
+    exe.write_text(FAKE_NEXTFLOW)
+    exe.chmod(0o755)
+    (bindir / "data").symlink_to(DATA)
+    assets = tmp_path / "nxf_assets" / "bigbio" / "quantms" / "assets"
+    assets.mkdir(parents=True)
+    (assets / "tmt6plex_default_correction.matrix").write_text("x")
+    monkeypatch.setenv("PATH", f"{bindir}:{os.environ['PATH']}")
+    monkeypatch.setenv("NXF_ASSETS", str(tmp_path / "nxf_assets"))
+    work = tmp_path / "launch"
+    backend = NextflowBackend(work)
+    client = ScriptedClient([rerun("run0", ext=FIX), finish("resolved", "run1")])
+    result = DiagnoseLoop(backend, Approver(), client, model="test").run()
+    assert result.runs == ["run0", "run1"]
+    assert result.code_check["flagged_run0"] == ["ch2", "ch4"]
+    assert result.code_check["status_consistent"] is True
+    assert (work / "assets" / "tmt6plex_default_correction.matrix").exists()
+    assert "fake nextflow done" in (work / f"agent_{backend.stamp}_run1.log").read_text()
