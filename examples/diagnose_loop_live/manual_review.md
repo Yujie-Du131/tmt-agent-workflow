@@ -90,7 +90,14 @@ check consistent.
   IsobaricWorkflow does not apply them. In the quantms TMT subworkflow,
   `MSSTATS_CONVERTER` reads the consensusXML written by `ISOBARIC_WORKFLOW`,
   so the table should change. The model raised the same two possibilities
-  and did not claim either. Not yet investigated.
+  and did not claim either. Checked afterwards: the MSstats input tables of
+  run0, run1 and run2 have the same md5, so the correction does not reach
+  the table; whether IsobaricWorkflow applies it is not yet known.
+- The IsobaricWorkflow log of run2 also reports the reporter calibration:
+  median m/z error about -0.0075 for 127 and 129, about -0.0012 for the
+  other channels, i.e. an extra 6.3 mDa on the two channels that fail at
+  0.002 Th. The model never saw this log; with it, the diagnosis in the
+  default-start runs would not need inference.
 - Next steps were sensible: use a lot-specific matrix if it matches the kit
   (it listed one from the bundled assets), and check which intensities the
   QC slope uses before concluding that interference is the cause.

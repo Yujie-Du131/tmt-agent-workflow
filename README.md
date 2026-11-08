@@ -123,10 +123,15 @@ spike-in ratio recovery.
   used. The pipeline option `--reporter_mass_shift` was recorded in the run
   parameters but not passed to the OpenMS `IsobaricWorkflow` step. Passing
   the option through `ext.args` (`configs/`) with 0.01 Th recovered both
-  channels (459-463 proteins in all channels). The pattern is consistent with
-  older TMT6 reagents whose 127/129 reporter masses differ slightly from the
-  expected values; the reagent masses were not checked against a primary
-  source.
+  channels (459-463 proteins in all channels). The IsobaricWorkflow log of a later live run (with 0.01 Th)
+  reports the reporter calibration directly: median m/z error about -0.0075
+  for 127 and 129 against about -0.0012 for the other four channels, an extra
+  offset of about 6.3 mDa on exactly the two failing channels. That is
+  larger than the default tolerance (0.002) and smaller than the fix (0.01),
+  and matches the 6.32 mDa difference between 13C- and 15N-based TMT reporter
+  isotopologues ([McAlister et al. 2012](https://pubmed.ncbi.nlm.nih.gov/22880955/)),
+  consistent with older TMT6 reagents. The reagent lot used for PXD000001
+  was not checked.
 - **Ratio compression.** Pooled spike-in slope 0.78 (1 = full recovery): a
   true 10-fold difference was measured as about 6-fold. Isotope correction was
   off in this run.
@@ -237,9 +242,11 @@ the fixed start, every rerun decided by the analyst at the terminal; review in
   the model did not ask again and kept the fix in its conclusion.
 - **Open finding:** both changes that reached the IsobaricWorkflow command
   (purity 0.7, isotope correction with a matrix) left every metric
-  unchanged, including protein counts. Either the MSstats input does not
-  reflect these settings or IsobaricWorkflow does not apply them; not yet
-  investigated.
+  unchanged, including protein counts. The MSstats input tables of the
+  fixed run, the isotope-correction run without a matrix and the run with
+  the matrix are byte-identical (same md5), so the correction does not
+  reach the MSstats table. Whether IsobaricWorkflow applies it (and the
+  converter ignores it) is not yet known.
 
 ## Repository layout
 
@@ -315,9 +322,10 @@ nextflow run bigbio/quantms -r 1.10.0 -profile test_tmt,docker \
 
 ## Next steps
 
-- Find out why the purity filter and isotope correction changed no metric
-  (compare the IsobaricWorkflow consensusXML and MSstats tables of these
-  runs).
+- Find out why the purity filter and isotope correction do not reach the
+  MSstats table (compare the IsobaricWorkflow consensusXML of these runs).
+- Give the agent the IsobaricWorkflow log as a tool: its reporter
+  calibration statistics show the 127/129 offset directly.
 - Apply to the thesis data once available.
 - Detection-strength curves (vary the size of planted problems).
 - An automatic check that every number quoted in an LLM report appears in the
