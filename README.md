@@ -25,7 +25,7 @@ no component has been run on my own MS data.
 | Pre-run SDRF checks | SDRF of my own experimental design, and 16 deliberately corrupted copies |
 | Contrast drafting | My own experimental design |
 | Post-run QC report | Simulated intensities with planted problems; real quantms output for the public dataset PXD000001 |
-| Diagnose-rerun agent loop | Replay of the two recorded PXD000001 runs, driven by a scripted model in tests. **Not yet run with the LLM.** |
+| Diagnose-rerun agent loop | Replay of the two recorded PXD000001 runs: scripted model in tests; pilot LLM runs (3 from each start). **Final LLM runs pending.** |
 
 ## The experiment the framework was designed for
 
@@ -182,8 +182,19 @@ Reruns are executed by one of two backends:
 Tested so far: the tests drive the loop with a scripted model through the
 manual path of section 4 (the parameter change has no effect; the `ext.args`
 change clears both flagged channels) and through refused, invalid,
-unavailable and over-budget requests, and status conflicts. No run with the
-LLM has been made yet, so whether the model finds the fix is not yet known.
+unavailable and over-budget requests, and status conflicts.
+
+**Pilot LLM runs** (`examples/diagnose_loop_pilot/`, 3 runs from each
+start). From the default run, 3/3 runs found the `ext.args` fix and finished
+"resolved", consistent with the code check; two took the same path as the
+manual investigation (parameter first, no effect, then `ext.args`). From the
+fixed run (control), 3/3 reported no channel problem and left the ratio
+compression unresolved, because replay could not serve their proposed
+reruns. The control runs exposed a replay bug (the fixed run's `ext.args`
+were not reported), which was fixed; one control run had tried to revert
+the fix on wrong reasoning. Review, including incorrect statements:
+`examples/diagnose_loop_pilot/manual_review.md`. Final runs on the fixed
+code are pending.
 
 ## Repository layout
 
@@ -195,7 +206,7 @@ scripts/          command-line entry points (one per step)
 data/             own_design/, corrupted_sdrf/, simulated_qc/, quantms_pxd000001/
 examples/         outputs, benchmark results and manual reviews
 configs/          Nextflow config used for the fixed quantms run
-tests/            96 tests; none calls the API
+tests/            98 tests; none calls the API
 ```
 
 ## Reproduce
@@ -248,15 +259,14 @@ nextflow run bigbio/quantms -r 1.10.0 -profile test_tmt,docker \
 - Contrast drafting supports 2 x 2 designs with one within-unit factor.
 - quantms 1.10.0 also writes results in the qpx format; only the MSstats
   input table is read.
-- The agent loop has been tested only with a scripted model. In replay mode
-  it can reach only two recorded runs, so it tests whether the model finds
-  and verifies the known fix, not open-ended troubleshooting. The live
-  Nextflow backend has not been run.
+- In replay mode the agent loop can reach only two recorded runs, so it
+  tests whether the model finds and verifies the known fix, not open-ended
+  troubleshooting. Its system prompt was written after the manual
+  diagnosis. The live Nextflow backend has not been run.
 
 ## Next steps
 
-- Run the agent loop with the LLM (from the default run and from the fixed
-  run as a control, 3 runs each) and review the transcripts.
+- Final agent-loop runs on the fixed replay backend (3 from each start).
 - Apply to the thesis data once available.
 - Detection-strength curves (vary the size of planted problems).
 - An automatic check that every number quoted in an LLM report appears in the

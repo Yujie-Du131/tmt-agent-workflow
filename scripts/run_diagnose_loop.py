@@ -22,7 +22,11 @@ from dotenv import load_dotenv
 from tmt_agents.design_check import default_model
 from tmt_agents.diagnose_loop import DiagnoseLoop, ReplayBackend, RerunRequest, format_transcript
 
-RECORDED = ["shift0.002", "shift0.01"]
+# Recorded quantms runs and the ext.args each was made with.
+RECORDED = {
+    "shift0.002": {},
+    "shift0.01": {"ISOBARIC_WORKFLOW": "-extraction:reporter_mass_shift 0.01"},
+}
 
 
 def ask_analyst(req: RerunRequest) -> tuple[bool, str]:
@@ -41,7 +45,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("data_dir", type=Path)
     parser.add_argument("out_dir", type=Path)
-    parser.add_argument("--start", default="shift0.002", choices=RECORDED)
+    parser.add_argument("--start", default="shift0.002", choices=list(RECORDED))
     parser.add_argument("--runs", type=int, default=1)
     parser.add_argument("--auto-approve", action="store_true")
     args = parser.parse_args()

@@ -143,20 +143,30 @@ class Backend(Protocol):
 class ReplayBackend:
     """Serve recorded runs; refuse anything that was not actually executed.
 
-    Recorded runs are given as tags; for each tag the folder must contain
-    msstats_in_<tag>.csv.gz, params_<tag>.json and isobaric_command_<tag>.sh.
+    `recorded` maps each tag to the ext.args the run was made with ({} for a
+    run without overrides; exactly one such run is required). For each tag
+    the folder must contain msstats_in_<tag>.csv.gz, params_<tag>.json and
+    isobaric_command_<tag>.sh.
     """
 
     # Pipeline parameters observed (quantms 1.10.0) not to change the
     # IsobaricWorkflow command. Changing only these reuses the cached step.
     PARAMS_NOT_PASSED = {"reporter_mass_shift"}
+    # IsobaricWorkflow defaults (OpenMS, confirmed with --helphelp). An
+    # explicit argument equal to its default gives the same output as no
+    # argument, so it is matched to the run without overrides.
+    OPENMS_DEFAULTS = {"-extraction:reporter_mass_shift": 0.002}
 
-    def __init__(self, data_dir: Path, initial_tag: str, recorded_tags: list[str]):
+    def __init__(self, data_dir: Path, initial_tag: str, recorded: dict[str, dict[str, str]]):
         self.data_dir = Path(data_dir)
         self.initial_tag = initial_tag
-        self.recorded = {t: self._load(t, t) for t in recorded_tags}
+        self.recorded = {t: self._load(t, t, ext) for t, ext in recorded.items()}
+        bare = [t for t, ext in recorded.items() if not ext]
+        if len(bare) != 1:
+            raise ValueError("exactly one recorded run without ext.args is required")
+        self.bare = self.recorded[bare[0]]
 
-    def _load(self, tag: str, run_id: str) -> Run:
+    def _load(self, tag: str, run_id: str, ext_args: dict[str, str]) -> Run:
         d = self.data_dir
         params = json.loads((d / f"params_{tag}.json").read_text(encoding="utf-8"))
         params["outdir"] = "results"  # recorded outdir names would hint at the fix
@@ -165,13 +175,31 @@ class ReplayBackend:
             msstats_path=d / f"msstats_in_{tag}.csv.gz",
             params=params,
             command=(d / f"isobaric_command_{tag}.sh").read_text(encoding="utf-8"),
+            ext_args=dict(ext_args),
             source=f"recorded run '{tag}'",
         )
 
     def initial_run(self) -> Run:
-        run = self._load(self.initial_tag, "run0")
-        run.note = "first run"
-        return run
+        rec = self.recorded[self.initial_tag]
+        return Run("run0", rec.msstats_path, dict(rec.params), rec.command, dict(rec.ext_args),
+                   "first run", rec.source)
+
+    def _effective_tokens(self, extra: str) -> Counter:
+        """Tokens of the extra arguments, dropping those equal to an OpenMS default."""
+        toks = shlex.split(extra)
+        kept, i = [], 0
+        while i < len(toks):
+            opt = toks[i]
+            if opt in self.OPENMS_DEFAULTS and i + 1 < len(toks):
+                try:
+                    if float(toks[i + 1]) == self.OPENMS_DEFAULTS[opt]:
+                        i += 2
+                        continue
+                except ValueError:
+                    pass
+            kept.append(opt)
+            i += 1
+        return command_tokens("IsobaricWorkflow " + " ".join(kept)) - Counter(["IsobaricWorkflow"])
 
     def rerun(self, base: Run, request: RerunRequest, run_id: str) -> Run | str:
         unknown = [k for k in request.param_changes if k not in self.PARAMS_NOT_PASSED]
@@ -179,14 +207,14 @@ class ReplayBackend:
             return (f"Not available in replay mode: no recorded run changes {unknown}. "
                     "This change would have to be run in live mode.")
         ext_args = {**base.ext_args, **request.ext_args}
+        ext_args = {k: v for k, v in ext_args.items() if v.strip()}
         extra = " ".join(ext_args.get("ISOBARIC_WORKFLOW", "").split())
-        target = command_tokens(self.recorded[self.initial_tag].command) + command_tokens(
-            f"IsobaricWorkflow {extra}") - Counter(["IsobaricWorkflow"])
+        target = command_tokens(self.bare.command) + self._effective_tokens(extra)
         for tag, rec in self.recorded.items():
             if command_tokens(rec.command) == target:
                 params = {**base.params, **request.param_changes}
                 note = f"rerun of {base.run_id}"
-                if command_tokens(rec.command) == command_tokens(base.command):
+                if ext_args == base.ext_args:
                     note += "; Nextflow reported ISOBARIC_WORKFLOW as cached"
                 return Run(run_id, rec.msstats_path, params, rec.command, ext_args, note,
                            source=f"replay of recorded run '{tag}'")
@@ -348,7 +376,7 @@ def format_qc(run: Run, qc: RunQC) -> str:
 
 
 def format_comparison(a: Run, qa: RunQC, b: Run, qb: RunQC) -> str:
-    cols = ["n_quantified", "raw_median_z"]
+    cols = ["n_quantified", "raw_median_z", "corr_to_others"]
     table = pd.concat({a.run_id: qa.metrics[cols], b.run_id: qb.metrics[cols]}, axis=1)
     params = {k: (a.params.get(k), b.params.get(k))
               for k in sorted(set(a.params) | set(b.params))

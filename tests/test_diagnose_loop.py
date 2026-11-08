@@ -18,8 +18,8 @@ from tmt_agents.diagnose_loop import (
 )
 
 DATA = Path(__file__).resolve().parents[1] / "data" / "quantms_pxd000001"
-RECORDED = ["shift0.002", "shift0.01"]
 FIX = {"ISOBARIC_WORKFLOW": "-extraction:reporter_mass_shift 0.01"}
+RECORDED = {"shift0.002": {}, "shift0.01": FIX}
 
 
 class ScriptedClient:
@@ -63,9 +63,9 @@ class Approver:
         return self.answer, ""
 
 
-def make_loop(calls, approver=None, **kw):
+def make_loop(calls, approver=None, start="shift0.002", **kw):
     client = ScriptedClient(calls)
-    backend = ReplayBackend(DATA, "shift0.002", RECORDED)
+    backend = ReplayBackend(DATA, start, RECORDED)
     loop = DiagnoseLoop(backend, approver or Approver(), client, model="test", **kw)
     return loop, client
 
@@ -196,3 +196,30 @@ def test_incomplete_finish_is_rejected():
     assert "Unknown final_run" in client.last_result(2)
     assert result.finish["next_steps"] == []
     assert sum(e["event"] == "finish_rejected_by_code" for e in result.events) == 2
+
+
+def test_fixed_run_shows_its_ext_args_and_can_be_reverted():
+    """Starting from the fixed run (control): its ext.args are reported, and
+    reverting the option (explicit default or removal) returns the default run."""
+    loop, client = make_loop([
+        ("get_run_config", {"run_id": "run0"}),
+        rerun("run0", ext={"ISOBARIC_WORKFLOW": "-extraction:reporter_mass_shift 0.002"}),
+        rerun("run0", ext={"ISOBARIC_WORKFLOW": ""}),
+        ("compare_runs", {"run_a": "run0", "run_b": "run1"}),
+        finish("unresolved", "run0"),
+    ], start="shift0.01")
+    result = loop.run()
+    assert "ext.args overrides: {'ISOBARIC_WORKFLOW': '-extraction:reporter_mass_shift 0.01'}" in client.last_result(1)
+    assert result.runs == ["run0", "run1", "run2"]
+    assert compute_qc(loop.runs["run1"]).flagged == ["ch2", "ch4"]
+    assert compute_qc(loop.runs["run2"]).flagged == ["ch2", "ch4"]
+    assert loop.runs["run2"].ext_args == {}
+    assert "run1=['ch2', 'ch4']" in client.last_result(4) and "corr_to_others" in client.last_result(4)
+
+
+def test_param_change_from_fixed_run_keeps_fix():
+    loop, _ = make_loop([rerun("run0", params={"reporter_mass_shift": 0.002}), finish("unresolved", "run0")],
+                        start="shift0.01")
+    loop.run()
+    assert compute_qc(loop.runs["run1"]).flagged == []
+    assert "cached" in loop.runs["run1"].note
