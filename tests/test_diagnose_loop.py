@@ -377,3 +377,13 @@ def test_live_backend_user_config_and_fixed_params(tmp_path):
     assert cmd[cmd.index("--root_folder") + 1] == "/data/pxd"
     assert cmd[-2:] == ["--min_precursor_purity", "0.5"]
     assert "resourceLimits" not in nf.config_text(FIX)
+
+
+def test_assets_found_in_nested_layout(tmp_path, monkeypatch):
+    nested = tmp_path / "nxf" / ".repos" / "bigbio" / "quantms" / "clones" / "6a721f0" / "assets"
+    nested.mkdir(parents=True)
+    (nested / "tmt6plex_default_correction.matrix").write_text("x")
+    monkeypatch.setenv("NXF_ASSETS", str(tmp_path / "nxf"))
+    nf = NextflowBackend(tmp_path / "launch", runner=lambda *a: 0)
+    nf._stage_assets()
+    assert nf.available_files() == ["assets/tmt6plex_default_correction.matrix"]

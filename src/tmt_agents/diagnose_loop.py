@@ -307,9 +307,12 @@ class NextflowBackend:
         the launch folder, as in its own test_tmt_corr profile.
         """
         assets_root = Path(os.environ.get("NXF_ASSETS", Path.home() / ".nextflow" / "assets"))
-        src = assets_root / self.pipeline / "assets"
+        repo = self.pipeline.split("/")[-1]
+        # the layout under NXF_ASSETS differs between Nextflow versions, so search
+        found = [f for f in assets_root.rglob("*.matrix")
+                 if repo in f.as_posix() and f.parent.name == "assets"]
         dest = self.workdir / "assets"
-        for f in src.glob("*.matrix"):
+        for f in found:
             dest.mkdir(exist_ok=True)
             if not (dest / f.name).exists():
                 (dest / f.name).write_bytes(f.read_bytes())

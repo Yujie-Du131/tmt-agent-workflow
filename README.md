@@ -25,7 +25,7 @@ no component has been run on my own MS data.
 | Pre-run SDRF checks | SDRF of my own experimental design, and 16 deliberately corrupted copies |
 | Contrast drafting | My own experimental design |
 | Post-run QC report | Simulated intensities with planted problems; real quantms output for the public dataset PXD000001 |
-| Diagnose-rerun agent loop | Replay of the two recorded PXD000001 quantms runs (LLM: 3 runs from each start; scripted model in tests). Live reruns not executed. |
+| Diagnose-rerun agent loop | Replay of the two recorded PXD000001 quantms runs (LLM: 3 runs from each start); live quantms reruns with analyst approval (LLM: 1 run from each start); scripted model in tests |
 
 ## The experiment the framework was designed for
 
@@ -183,8 +183,7 @@ Reruns are executed by one of two backends:
   changed are rerun. In quantms 1.10.0, `isotope_correction` has an effect
   only when `plex_corr_matrix_file` is also set (checked in the module
   source); quantms's bundled correction matrices are copied into the launch
-  folder and listed for the model. Tested against a fake `nextflow` in the
-  tests; not yet run for real.
+  folder and listed for the model. Used for the live runs below.
 
 The tests drive the loop with a scripted model through the
 manual path of section 4 (the parameter change has no effect; the `ext.args`
@@ -215,6 +214,23 @@ On review (`examples/diagnose_loop/manual_review.md`):
   explicit default argument missing from the replayed command) affected one
   remaining-issue statement and was fixed afterwards.
 
+**Live runs** (`examples/diagnose_loop_live/`, 1 run from each start, every
+rerun approved by the analyst at the terminal; review in
+`examples/diagnose_loop_live/manual_review.md`):
+
+- From the default run: one rerun with the `ext.args` fix, "resolved",
+  consistent with the code check. The fixed step came from the Nextflow
+  cache of the manual investigation (`ISOBARIC_WORKFLOW` reported as
+  `CACHED`), so it was not recomputed.
+- From the fixed run: three reruns, "unresolved", fixed run kept as final.
+  `min_precursor_purity` 0.7 was computed fresh and changed nothing
+  (unexplained). `isotope_correction` alone left the command unchanged, which
+  the model noticed, but it did not identify that `plex_corr_matrix_file` is
+  also required; the bundled matrices had not been listed for it because of
+  a bug in the backend, since fixed. The third rerun, approved by the
+  analyst, reverted the fix as in the replayed controls and broke ch2 and
+  ch4 again; the model then kept the fixed run.
+
 ## Repository layout
 
 ```
@@ -225,7 +241,7 @@ scripts/          command-line entry points (one per step)
 data/             own_design/, corrupted_sdrf/, simulated_qc/, quantms_pxd000001/
 examples/         outputs, benchmark results and manual reviews
 configs/          Nextflow config used for the fixed quantms run
-tests/            102 tests; none calls the API
+tests/            103 tests; none calls the API
 ```
 
 ## Reproduce
@@ -284,13 +300,14 @@ nextflow run bigbio/quantms -r 1.10.0 -profile test_tmt,docker \
 - In replay mode the agent loop can reach only two recorded runs, so it
   tests whether the model finds and verifies the known fix, not open-ended
   troubleshooting. Its system prompt was written after the manual
-  diagnosis, and reruns in the LLM runs were auto-approved. The live
-  Nextflow backend has not been run.
+  diagnosis, and reruns in the replayed runs were auto-approved. Only two
+  live runs were made, and the live fix came from the Nextflow cache.
 
 ## Next steps
 
-- Run the agent loop with the live Nextflow backend, starting with the ratio
-  compression reruns it proposed (isotope correction, precursor purity).
+- A live run in which the bundled correction matrix is listed for the model
+  (isotope correction with `plex_corr_matrix_file`).
+- Find out why `min_precursor_purity` 0.7 had no effect on PXD000001.
 - Apply to the thesis data once available.
 - Detection-strength curves (vary the size of planted problems).
 - An automatic check that every number quoted in an LLM report appears in the
