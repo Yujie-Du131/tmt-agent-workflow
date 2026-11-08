@@ -225,7 +225,7 @@ scripts/          command-line entry points (one per step)
 data/             own_design/, corrupted_sdrf/, simulated_qc/, quantms_pxd000001/
 examples/         outputs, benchmark results and manual reviews
 configs/          Nextflow config used for the fixed quantms run
-tests/            101 tests; none calls the API
+tests/            102 tests; none calls the API
 ```
 
 ## Reproduce
@@ -259,7 +259,8 @@ uv run python scripts/run_real_qc_report.py data/quantms_pxd000001 shift0.002 ex
 uv run python scripts/run_diagnose_loop.py data/quantms_pxd000001 examples/diagnose_loop --start shift0.002 --runs 3 --auto-approve
 uv run python scripts/run_diagnose_loop.py data/quantms_pxd000001 examples/diagnose_loop --start shift0.01 --runs 3 --auto-approve
 # live (Nextflow + Docker), launched from the folder of an earlier quantms run to reuse its cache
-uv run python scripts/run_diagnose_loop.py data/quantms_pxd000001 examples/diagnose_loop_live --start shift0.002 --live ~/quantms_runs
+uv run python scripts/run_diagnose_loop.py data/quantms_pxd000001 examples/diagnose_loop_live --start shift0.002 \
+  --live ~/quantms_test --nf-config ~/quantms_test/small.config --nf-param root_folder=/home/ubuntu/pxd000001 --nf-param local_input_type=raw
 ```
 
 The quantms run itself (Nextflow, Docker; about 25 min on 2 vCPU / 8 GB):

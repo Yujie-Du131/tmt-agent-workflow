@@ -255,12 +255,19 @@ class NextflowBackend:
                  pipeline: str = "bigbio/quantms", revision: str = "1.10.0",
                  profile: str = "test_tmt,docker",
                  base_config: str = "process { resourceLimits = [cpus: 2, memory: 7.GB, time: 12.h] }",
+                 user_configs: list[Path] | None = None, fixed_params: dict[str, str] | None = None,
                  runner: Runner = _run_logged, log_reader: Callable[[str, Path], str] | None = None):
+        """`user_configs` (e.g. the config of earlier runs) are passed with -c
+        before the agent's own config; `fixed_params` are passed on every run
+        (e.g. root_folder, local_input_type), so that the cache of earlier runs
+        is reused. With user_configs, `base_config` is not added."""
         self.workdir = Path(workdir).resolve()
         self.workdir.mkdir(parents=True, exist_ok=True)
         self.initial_ext_args = dict(initial_ext_args or {})
         self.pipeline, self.revision, self.profile = pipeline, revision, profile
-        self.base_config = base_config
+        self.user_configs = [Path(c).resolve() for c in (user_configs or [])]
+        self.base_config = "" if self.user_configs else base_config
+        self.fixed_params = dict(fixed_params or {})
         self.runner = runner
         self.log_reader = log_reader or self._nextflow_log
         self.stamp = pd.Timestamp.now().strftime("%Y%m%d%H%M%S")
@@ -268,7 +275,7 @@ class NextflowBackend:
     # -- helpers -------------------------------------------------------------
 
     def config_text(self, ext_args: dict[str, str]) -> str:
-        lines = [self.base_config, "process {"]
+        lines = ([self.base_config] if self.base_config else []) + ["process {"]
         for proc, args in ext_args.items():
             lines.append(f"    withName: '.*:{proc}' {{ ext.args = {json.dumps(args)} }}")
         lines.append("}")
@@ -276,8 +283,11 @@ class NextflowBackend:
 
     def command(self, overrides: dict, config_path: Path, outdir: str, name: str) -> list[str]:
         cmd = ["nextflow", "run", self.pipeline, "-r", self.revision, "-profile", self.profile,
-               "-name", name, "-resume", "-c", str(config_path), "--outdir", outdir]
-        for k, v in overrides.items():
+               "-name", name, "-resume"]
+        for c in self.user_configs:
+            cmd += ["-c", str(c)]
+        cmd += ["-c", str(config_path), "--outdir", outdir]
+        for k, v in {**self.fixed_params, **overrides}.items():
             cmd += [f"--{k}", str(v).lower() if isinstance(v, bool) else str(v)]
         return cmd
 

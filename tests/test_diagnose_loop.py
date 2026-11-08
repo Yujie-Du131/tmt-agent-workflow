@@ -198,7 +198,8 @@ class FakeNextflow:
             return 1
         name = cmd[cmd.index("-name") + 1]
         outdir = Path(cwd) / cmd[cmd.index("--outdir") + 1]
-        fixed = "reporter_mass_shift 0.01" in Path(cmd[cmd.index("-c") + 1]).read_text()
+        configs = [cmd[i + 1] for i, t in enumerate(cmd) if t == "-c"]
+        fixed = any("reporter_mass_shift 0.01" in Path(c).read_text() for c in configs)
         tag = "shift0.01" if fixed else "shift0.002"
         (outdir / "quant_tables").mkdir(parents=True)
         (outdir / "pipeline_info").mkdir()
@@ -240,7 +241,8 @@ def test_live_backend_with_fake_nextflow(tmp_path):
     assert compute_qc(loop.runs["run2"]).flagged == []
     run3_cmd = fake.commands[3]
     assert run3_cmd[-2:] == ["--min_precursor_purity", "0.5"]  # overrides accumulate from run2
-    assert "reporter_mass_shift 0.01" in Path(run3_cmd[run3_cmd.index("-c") + 1]).read_text()
+    agent_cfg = [run3_cmd[i + 1] for i, t in enumerate(run3_cmd) if t == "-c"][-1]
+    assert "reporter_mass_shift 0.01" in Path(agent_cfg).read_text()
     assert loop.runs["run3"].overrides == {"min_precursor_purity": 0.5}
     assert result.code_check["status_consistent"] is True
     assert "run2=none" in client.last_result(5)
@@ -324,7 +326,8 @@ if args[0] == "log":
     print(f"BIGBIO_QUANTMS:QUANTMS:TMT:ISOBARIC_WORKFLOW (PXD000001)\t{tasks[args[1]]}")
     sys.exit(0)
 name, out = args[args.index("-name") + 1], Path(args[args.index("--outdir") + 1])
-tag = "shift0.01" if "0.01" in Path(args[args.index("-c") + 1]).read_text() else "shift0.002"
+configs = [args[i + 1] for i, t in enumerate(args) if t == "-c"]
+tag = "shift0.01" if any("0.01" in Path(c).read_text() for c in configs) else "shift0.002"
 (out / "quant_tables").mkdir(parents=True)
 (out / "pipeline_info").mkdir()
 with gzip.open(DATA / f"msstats_in_{tag}.csv.gz") as src, open(out / "quant_tables" / "x_msstats_in.csv", "wb") as dst:
@@ -361,3 +364,16 @@ def test_live_backend_with_fake_executable(tmp_path, monkeypatch):
     assert result.code_check["status_consistent"] is True
     assert (work / "assets" / "tmt6plex_default_correction.matrix").exists()
     assert "fake nextflow done" in (work / f"agent_{backend.stamp}_run1.log").read_text()
+
+
+def test_live_backend_user_config_and_fixed_params(tmp_path):
+    user_cfg = tmp_path / "small.config"
+    user_cfg.write_text("process { resourceLimits = [cpus: 2, memory: 7.GB] }")
+    nf = NextflowBackend(tmp_path, user_configs=[user_cfg],
+                         fixed_params={"root_folder": "/data/pxd", "local_input_type": "raw"})
+    cmd = nf.command({"min_precursor_purity": 0.5}, tmp_path / "agent.config", "out", "agent_x_run1")
+    configs = [cmd[i + 1] for i, t in enumerate(cmd) if t == "-c"]
+    assert configs == [str(user_cfg.resolve()), str(tmp_path / "agent.config")]  # user config first
+    assert cmd[cmd.index("--root_folder") + 1] == "/data/pxd"
+    assert cmd[-2:] == ["--min_precursor_purity", "0.5"]
+    assert "resourceLimits" not in nf.config_text(FIX)

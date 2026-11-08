@@ -17,9 +17,12 @@ Usage (from the repository root):
     # replay
     uv run python scripts/run_diagnose_loop.py data/quantms_pxd000001 \
         examples/diagnose_loop --start shift0.002 --runs 3 --auto-approve
-    # live, approving each rerun at the terminal
+    # live, approving each rerun at the terminal; pass the config and fixed
+    # parameters of the earlier runs so that their cache is reused
     uv run python scripts/run_diagnose_loop.py data/quantms_pxd000001 \
-        examples/diagnose_loop_live --start shift0.002 --live ~/quantms_runs
+        examples/diagnose_loop_live --start shift0.002 --live ~/quantms_test \
+        --nf-config ~/quantms_test/small.config \
+        --nf-param root_folder=/home/ubuntu/pxd000001 --nf-param local_input_type=raw
 
 Without --auto-approve, each rerun request is shown and must be approved at
 the terminal. --auto-approve stands in for the analyst in benchmark runs and
@@ -70,6 +73,10 @@ def main() -> None:
     parser.add_argument("--auto-approve", action="store_true")
     parser.add_argument("--live", type=Path, metavar="WORKDIR",
                         help="run quantms for real, launched from WORKDIR")
+    parser.add_argument("--nf-config", type=Path, action="append", default=[],
+                        help="extra Nextflow config used by earlier runs (live mode; repeatable)")
+    parser.add_argument("--nf-param", action="append", default=[], metavar="KEY=VALUE",
+                        help="pipeline parameter passed on every run (live mode; repeatable)")
     args = parser.parse_args()
 
     load_dotenv()
@@ -83,7 +90,9 @@ def main() -> None:
         if args.live:
             print(f"Starting the first quantms run in {args.live} (can take about 25 min "
                   "unless cached)...")
-            backend = NextflowBackend(args.live, initial_ext_args=RECORDED[args.start])
+            fixed = dict(p.split("=", 1) for p in args.nf_param)
+            backend = NextflowBackend(args.live, initial_ext_args=RECORDED[args.start],
+                                      user_configs=args.nf_config, fixed_params=fixed)
         else:
             backend = ReplayBackend(args.data_dir, args.start, RECORDED)
         result = DiagnoseLoop(backend, approver, client).run()
